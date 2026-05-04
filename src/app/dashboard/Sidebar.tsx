@@ -49,11 +49,11 @@ export default function Sidebar({ session }: { session: any }) {
         <nav className="flex flex-col gap-2">
           <Link 
             href="/dashboard" 
-            title="Beranda Dashboard"
+            title="Home"
             className={`flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${pathname === "/dashboard" ? "bg-sky-50 text-sky-600" : "text-slate-600 hover:bg-black/5"}`}
           >
             <LayoutDashboard size={20} className="shrink-0" />
-            {!isSidebarCollapsed && <span className="whitespace-nowrap">Beranda Dashboard</span>}
+            {!isSidebarCollapsed && <span className="whitespace-nowrap">Home</span>}
           </Link>
           <Link 
             href="/dashboard/maps" 

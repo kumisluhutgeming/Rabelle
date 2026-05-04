@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Map, Table as TableIcon, BarChart3, Radio, Tv, Wifi } from "lucide-react";
+import { Map, Table as TableIcon, BarChart3, Radio, Tv } from "lucide-react";
 
 export default function LandingPageClient({ session, stats }: { session: any, stats: any }) {
   // Animation variants
@@ -76,24 +76,24 @@ export default function LandingPageClient({ session, stats }: { session: any, st
           >
             <motion.div variants={fadeIn} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-sky-100 text-sky-600 text-sm font-medium mb-4 shadow-sm">
               <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse"></span>
-              Pusat Data Infrastruktur Terintegrasi
+              Infrastruktur Telekomunikasi Indonesia, Dalam Satu Platform
             </motion.div>
 
             <motion.h1 variants={fadeIn} className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Eksplorasi Jaringan <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#007AFF] to-[#5856D6]">Tanpa Batas</span>
+              Data Sinyal, <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#007AFF] to-[#5856D6]">Sejernih Kristal.</span>
             </motion.h1>
             
             <motion.p variants={fadeIn} className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-              Platform publik Rabelle menyediakan pemetaan visual interaktif, analitik dashboard, dan basis data terlengkap untuk seluruh menara komunikasi di wilayah Anda.
+              Ribuan titik menara BTS, TV, dan Radio — dipetakan, dianalisis, dan siap dieksplor. Rabelle memberi siapa saja akses ke data infrastruktur telekomunikasi yang selama ini tersembunyi.
             </motion.p>
 
             <motion.div variants={fadeIn} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link href="/dashboard/maps" className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#007AFF] hover:bg-[#0066CC] text-white font-semibold hover:-translate-y-1 transition-all duration-300 shadow-lg shadow-[#007AFF]/30 flex items-center justify-center gap-2">
-                <Map size={20} /> Lihat Peta Sekarang
+                <Map size={20} /> Buka Peta Interaktif
               </Link>
               <Link href="/dashboard" className="w-full sm:w-auto px-8 py-4 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 hover:-translate-y-1 transition-all duration-300 shadow-sm flex items-center justify-center gap-2">
-                <BarChart3 size={20} /> Lihat Analitik
+                <BarChart3 size={20} /> Eksplorasi Dashboard
               </Link>
             </motion.div>
           </motion.div>
@@ -107,14 +107,17 @@ export default function LandingPageClient({ session, stats }: { session: any, st
             className="mt-32 mb-16"
           >
             <motion.div variants={fadeIn} className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-slate-800">Skala Infrastruktur Terpantau</h2>
-              <p className="text-slate-500 mt-2">Ribuan data menara tercatat secara real-time dan terverifikasi.</p>
+              <h2 className="text-3xl font-bold text-slate-800">Angka yang Bicara Sendiri</h2>
+              <p className="text-slate-500 mt-2">Data real-time. Terverifikasi. Terbuka untuk semua.</p>
             </motion.div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               <motion.div variants={fadeIn} className="bg-white/80 backdrop-blur-xl border border-white/60 p-6 rounded-[24px] shadow-sm text-center transform hover:scale-105 transition-transform duration-300">
                 <div className="w-12 h-12 mx-auto bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
-                  <Wifi size={24} />
+                  {/* Tower icon */}
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2v20M5 6l7-4 7 4M5 12h14M7 18h10" />
+                  </svg>
                 </div>
                 <h3 className="text-4xl font-extrabold text-slate-900 mb-1">{stats.total}</h3>
                 <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Total Menara</p>
@@ -152,7 +155,8 @@ export default function LandingPageClient({ session, stats }: { session: any, st
             className="mt-24 pt-24 border-t border-slate-200/60"
           >
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-slate-800">Kenapa Memilih Rabelle?</h2>
+              <h2 className="text-3xl font-bold text-slate-800">Dibangun untuk Kecepatan & Kejelasan</h2>
+              <p className="text-slate-500 mt-3 max-w-xl mx-auto">Bukan sekadar peta biasa. Rabelle hadir dengan fitur yang dirancang untuk yang serius soal data.</p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
@@ -160,9 +164,9 @@ export default function LandingPageClient({ session, stats }: { session: any, st
                 <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center mb-6 group-hover:bg-indigo-500 transition-colors duration-300">
                   <Map size={28} className="text-indigo-600 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">Peta Interaktif Layar Penuh</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-3">Peta Skala Penuh, Zero Lag</h3>
                 <p className="text-slate-600 leading-relaxed text-sm">
-                  Navigasi peta sebaran menara dengan filter mengambang (floating) bergaya modern. Sangat halus, responsif, dan memberikan tampilan tanpa halangan.
+                  Ribuan titik tersebar di peta dengan rendering cerdas berbasis zoom — hanya data yang relevan yang ditampilkan, sehingga tetap cepat di segala skala.
                 </p>
               </motion.div>
 
@@ -170,9 +174,9 @@ export default function LandingPageClient({ session, stats }: { session: any, st
                 <div className="w-14 h-14 rounded-xl bg-sky-50 flex items-center justify-center mb-6 group-hover:bg-sky-500 transition-colors duration-300">
                   <TableIcon size={28} className="text-sky-600 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">Database Akurat & Ekspor</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-3">Data Bisa Dicari, Bisa Dibawa</h3>
                 <p className="text-slate-600 leading-relaxed text-sm">
-                  Cari dan saring ribuan data stasiun dari tabel berkinerja tinggi. Pengguna terdaftar juga dapat mengunduh himpunan data langsung ke dalam format spreadsheet.
+                  Filter ribuan entri dalam hitungan milidetik. Pengguna terdaftar bisa langsung ekspor dataset ke spreadsheet — tanpa perlu minta-minta akses.
                 </p>
               </motion.div>
 
@@ -180,9 +184,9 @@ export default function LandingPageClient({ session, stats }: { session: any, st
                 <div className="w-14 h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-6 group-hover:bg-emerald-500 transition-colors duration-300">
                   <BarChart3 size={28} className="text-emerald-600 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">Analitik Real-Time</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-3">Insight Instan, Bukan Laporan</h3>
                 <p className="text-slate-600 leading-relaxed text-sm">
-                  Pantau komposisi menara komunikasi berdasarkan kategori operator melalui grafik statistik yang diperbarui seketika oleh sistem.
+                  Dashboard analitik yang memperlihatkan komposisi jaringan secara visual — langsung, tanpa perlu buka Excel atau tunggu laporan bulanan.
                 </p>
               </motion.div>
             </div>
@@ -191,7 +195,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
       </main>
       
       <footer className="py-8 text-center border-t border-slate-200/60 mt-12">
-        <p className="text-slate-500 text-sm">© 2026 Rabelle Platform Infrastruktur. Membangun konektivitas masa depan.</p>
+        <p className="text-slate-500 text-sm">© 2026 Rabelle — Infrastruktur terlihat, keputusan lebih terang.</p>
       </footer>
     </div>
   );

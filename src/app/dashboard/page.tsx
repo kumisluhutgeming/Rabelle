@@ -45,7 +45,10 @@ export default async function DashboardPage() {
           {/* Card Total */}
           <div className="bg-white/70 backdrop-blur-[20px] border border-white/60 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-[24px] p-6 flex flex-col justify-between col-span-2 sm:col-span-1">
             <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-[#007AFF] mb-4">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              {/* Tower / Antenna icon */}
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2v20M5 6l7-4 7 4M5 12h14M7 18h10" />
+              </svg>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500 mb-1">Total Infrastruktur</p>
