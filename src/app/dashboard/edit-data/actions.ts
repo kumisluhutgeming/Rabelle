@@ -4,6 +4,10 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { upsertLocation, revalidateTowerPaths } from "@/lib/tower";
 
+import { createAuditLog } from "@/lib/audit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
 const genericNames = ["communication", "tower", "mast", "unknown", ""];
 
 function isGeneric(name: string | null | undefined) {
@@ -13,6 +17,11 @@ function isGeneric(name: string | null | undefined) {
 
 export async function uploadGeojson(formData: FormData) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (!(session as any).user?.isAdmin && (session as any).user?.role !== "admin")) {
+      return { success: false, message: "Unauthorized: Akses ditolak." };
+    }
+
     const file = formData.get("file") as File;
     const kotaName = formData.get("kota") as string;
 
@@ -119,6 +128,8 @@ export async function uploadGeojson(formData: FormData) {
 
     revalidateTowerPaths();
 
+    await createAuditLog("Impor GeoJSON", `Menambahkan ${newCount} menara baru dan memperbarui ${updateCount} menara di kota ${kotaName}`);
+
     return {
       success: true,
       message: `Impor berhasil! Ditambahkan: ${newCount}, Diperbarui: ${updateCount}, Dilewati (Duplikat): ${skippedCount}`,
@@ -131,6 +142,11 @@ export async function uploadGeojson(formData: FormData) {
 
 export async function saveGpsTower(formData: FormData) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (!(session as any).user?.isAdmin && (session as any).user?.role !== "admin")) {
+      return { success: false, message: "Unauthorized: Akses ditolak." };
+    }
+
     const operator = formData.get("operator") as string;
     const provinsi = formData.get("provinsi") as string;
     const kota = formData.get("kota") as string;
@@ -177,6 +193,8 @@ export async function saveGpsTower(formData: FormData) {
     });
 
     revalidateTowerPaths();
+
+    await createAuditLog("Tambah Menara Baru", `Menambahkan menara operator ${operator} (${jenis}) di ${kota}, ${provinsi}`);
 
     return { success: true, message: "Menara baru berhasil ditambahkan!" };
   } catch (error: any) {

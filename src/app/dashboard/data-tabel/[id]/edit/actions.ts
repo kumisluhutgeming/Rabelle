@@ -2,9 +2,17 @@
 
 import prisma from "@/lib/prisma";
 import { upsertLocation, revalidateTowerPaths } from "@/lib/tower";
+import { createAuditLog } from "@/lib/audit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function updateTowerData(id: string, formData: FormData) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (!(session as any).user?.isAdmin && (session as any).user?.role !== "admin")) {
+      return { success: false, message: "Unauthorized: Akses ditolak." };
+    }
+
     const operator = formData.get("operator") as string;
     const jenis = formData.get("jenis") as string;
     const provinsi = formData.get("provinsi") as string;
@@ -54,6 +62,8 @@ export async function updateTowerData(id: string, formData: FormData) {
     });
 
     revalidateTowerPaths();
+
+    await createAuditLog("Perbarui Menara", `Memperbarui data menara ID ${id} menjadi operator ${operator} di ${kota}, ${provinsi}`);
 
     return { success: true, message: "Data berhasil diperbarui!" };
   } catch (error: any) {

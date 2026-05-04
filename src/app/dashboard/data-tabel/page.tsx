@@ -5,6 +5,7 @@ import TableFilter from "./TableFilter";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { EXCLUDED_JENIS } from "@/lib/constants";
+import ExportButton from "./ExportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -81,10 +82,7 @@ export default async function DataTabelPage({
 
         <div className="flex flex-col sm:flex-row gap-3">
           {session ? (
-            <button className="bg-[#007AFF] hover:bg-[#0066CC] text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Unduh Dataset
-            </button>
+            <ExportButton params={resolvedParams} />
           ) : (
             <Link href="/login" className="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl, Polyline, useMapEvents } from "react-leaflet";
+import { useEffect, useState, useMemo, Fragment } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl, Polyline, useMapEvents, Circle } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -78,7 +78,7 @@ function MapEventsListener({
   useEffect(() => {
     onZoomChange(map.getZoom());
     onBoundsChange(map.getBounds());
-  }, [map, onZoomChange, onBoundsChange]);
+  }, []);
 
   return null;
 }
@@ -90,6 +90,21 @@ export default function MapComponent({ markers }: { markers: any[] }) {
   const [signal, setSignal] = useState<{strength: string, distance: number, color: string} | null>(null);
   const [currentZoom, setCurrentZoom] = useState(9);
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
+  const [showCoverage, setShowCoverage] = useState(false);
+
+  const getCoverageRadius = (jenis: string, nama: string) => {
+    const nameLower = nama.toLowerCase();
+    const typeLower = jenis.toLowerCase();
+
+    if (typeLower === "bts") {
+      if (nameLower.includes("5g")) return { radius: 500, color: "#10b981" };
+      return { radius: 3000, color: "#3b82f6" };
+    }
+    if (typeLower === "tv") return { radius: 30000, color: "#ef4444" };
+    if (typeLower === "radio") return { radius: 20000, color: "#f59e0b" };
+
+    return { radius: 1500, color: "#64748b" };
+  };
 
   const MIN_ZOOM = 5;
   const MAX_ZOOM = 18;
@@ -103,6 +118,17 @@ export default function MapComponent({ markers }: { markers: any[] }) {
 
   const groupedByProvince = useMemo(() => {
     if (renderMode !== 'province') return [];
+    
+    const PROVINCE_CENTROIDS: Record<string, [number, number]> = {
+      "Jawa Barat": [-6.9147, 107.6098],
+      "DKI Jakarta": [-6.2088, 106.8456],
+      "Banten": [-6.4058, 106.0640],
+      "Jawa Tengah": [-7.1509, 110.1402],
+      "DI Jogja": [-7.8753, 110.4262],
+      "Jawa Timur": [-7.5360, 112.2384],
+      "Bali": [-8.4095, 115.1889]
+    };
+
     const groups: Record<string, { latSum: number, lngSum: number, count: number, name: string }> = {};
     markers.forEach(m => {
       const prov = m.provinsi || 'Unknown';
@@ -114,13 +140,25 @@ export default function MapComponent({ markers }: { markers: any[] }) {
       groups[prov].count += 1;
     });
 
-    return Object.values(groups).map(g => ({
-      lat: g.latSum / g.count,
-      lng: g.lngSum / g.count,
-      count: g.count,
-      name: g.name
-    }));
+    return Object.values(groups).map(g => {
+      if (PROVINCE_CENTROIDS[g.name]) {
+        const [fixedLat, fixedLng] = PROVINCE_CENTROIDS[g.name];
+        return {
+          lat: fixedLat,
+          lng: fixedLng,
+          count: g.count,
+          name: g.name
+        };
+      }
+      return {
+        lat: g.latSum / g.count,
+        lng: g.lngSum / g.count,
+        count: g.count,
+        name: g.name
+      };
+    });
   }, [markers, renderMode]);
+
 
   const groupedByKota = useMemo(() => {
     if (renderMode !== 'kota') return [];
@@ -282,31 +320,47 @@ export default function MapComponent({ markers }: { markers: any[] }) {
 
         {renderMode === 'point' && (
           // Render ONLY individual markers that are within the current map bounds (Viewport Culling)
-          visibleMarkers.map((marker) => (
-            <Marker 
-              key={marker.id} 
-              position={[marker.lat, marker.lng]}
-              icon={pointIcon}
-            >
-              <Popup>
-                <div className="p-1 min-w-[200px]">
-                  <h3 className="font-bold text-slate-800 text-base mb-1">{marker.nama}</h3>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700 uppercase tracking-wider">
-                      {marker.jenis}
-                    </span>
-                    <span className="text-xs text-slate-500 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                      {marker.kota}
-                    </span>
-                  </div>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 font-mono">
-                    {marker.lat}, {marker.lng}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))
+          visibleMarkers.map((marker) => {
+            const cov = getCoverageRadius(marker.jenis, marker.nama);
+            return (
+              <Fragment key={marker.id}>
+                {showCoverage && (
+                  <Circle
+                    center={[marker.lat, marker.lng]}
+                    radius={cov.radius}
+                    pathOptions={{
+                      fillColor: cov.color,
+                      fillOpacity: 0.12,
+                      color: cov.color,
+                      weight: 1
+                    }}
+                  />
+                )}
+                <Marker 
+                  position={[marker.lat, marker.lng]}
+                  icon={pointIcon}
+                >
+                  <Popup>
+                    <div className="p-1 min-w-[200px]">
+                      <h3 className="font-bold text-slate-800 text-base mb-1">{marker.nama}</h3>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700 uppercase tracking-wider">
+                          {marker.jenis}
+                        </span>
+                        <span className="text-xs text-slate-500 flex items-center">
+                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                          {marker.kota}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 font-mono">
+                        {marker.lat}, {marker.lng}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              </Fragment>
+            );
+          })
         )}
         
         {/* User GPS Marker */}
@@ -339,9 +393,20 @@ export default function MapComponent({ markers }: { markers: any[] }) {
         <FlyToUser pos={userPos} />
       </MapContainer>
       
-      {/* Zoom Percentage Display */}
-      <div className="absolute bottom-6 right-[60px] z-[400] pointer-events-none">
-        <div className="bg-white/90 backdrop-blur shadow-md px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-bold text-slate-700">
+      {/* Zoom Percentage & Radius Coverage Toggle Display */}
+      <div className="absolute bottom-6 right-[60px] z-[400] flex items-center gap-2">
+        <button
+          onClick={() => setShowCoverage(!showCoverage)}
+          className={`backdrop-blur shadow-md px-3.5 py-2 rounded-xl border text-xs font-bold transition-all duration-300 pointer-events-auto flex items-center gap-1.5 ${
+            showCoverage 
+              ? "bg-indigo-600 border-indigo-700 text-white shadow-lg shadow-indigo-500/30" 
+              : "bg-white/90 border-slate-200 text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          <span className={`w-2.5 h-2.5 rounded-full border border-white ${showCoverage ? "bg-emerald-300" : "bg-slate-300"}`}></span>
+          {showCoverage ? "Sembunyikan Radius" : "Tampilkan Radius"}
+        </button>
+        <div className="bg-white/90 backdrop-blur shadow-md px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 pointer-events-none">
           {zoomPercent}%
         </div>
       </div>

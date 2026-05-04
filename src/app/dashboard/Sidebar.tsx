@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useIdle } from "./IdleProvider";
 import LogoutButton from "./LogoutButton";
-import { LayoutDashboard, Map as MapIcon, Table, Settings, Home, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Map as MapIcon, Table, Settings, Home, ChevronLeft, ChevronRight, BarChart2, ClipboardList } from "lucide-react";
 
 export default function Sidebar({ session }: { session: any }) {
   const pathname = usePathname();
@@ -67,6 +67,14 @@ export default function Sidebar({ session }: { session: any }) {
             <Table size={20} className="shrink-0" />
             {!isSidebarCollapsed && <span className="whitespace-nowrap">Tabel Data</span>}
           </Link>
+          <Link 
+            href="/dashboard/analytics" 
+            title="Analitik Tren"
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${pathname === "/dashboard/analytics" ? "bg-sky-50 text-sky-600" : "text-slate-600 hover:bg-black/5"}`}
+          >
+            <BarChart2 size={20} className="shrink-0" />
+            {!isSidebarCollapsed && <span className="whitespace-nowrap">Analitik Tren</span>}
+          </Link>
         </nav>
       </div>
 
@@ -76,13 +84,22 @@ export default function Sidebar({ session }: { session: any }) {
         {session ? (
           <>
             {session?.user?.isAdmin && (
-              <Link 
-                href="/dashboard/edit-data"
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full font-medium mb-2 ${pathname === "/dashboard/edit-data" ? "bg-indigo-100 text-indigo-700" : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"}`}
-              >
-                <Settings size={20} className="shrink-0" />
-                {!isSidebarCollapsed && <span className="whitespace-nowrap">Edit Data</span>}
-              </Link>
+              <>
+                <Link 
+                  href="/dashboard/edit-data"
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full font-medium mb-1 ${pathname === "/dashboard/edit-data" ? "bg-indigo-100 text-indigo-700" : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"}`}
+                >
+                  <Settings size={20} className="shrink-0" />
+                  {!isSidebarCollapsed && <span className="whitespace-nowrap">Edit Data</span>}
+                </Link>
+                <Link 
+                  href="/dashboard/audit"
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full font-medium mb-2 ${pathname === "/dashboard/audit" ? "bg-amber-100 text-amber-700" : "bg-amber-50 text-amber-600 hover:bg-amber-100"}`}
+                >
+                  <ClipboardList size={20} className="shrink-0" />
+                  {!isSidebarCollapsed && <span className="whitespace-nowrap">Log Aktivitas</span>}
+                </Link>
+              </>
             )}
             <LogoutButton isCollapsed={isSidebarCollapsed} />
           </>
