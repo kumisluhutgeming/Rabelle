@@ -1,3 +1,10 @@
+Aplikasi Rabelle adalah aplikasi berbasis web dengan fungsi utama mempetakan menara komunikasi yang berada di pulau Jawa dan bali.
+
+cara memulai aplikasi;
+1. Pastikan apache dan mysql sudah menyala di xampp
+2. Jalankan file start_rabelle.bat
+3. buka browser anda dan pergi ke http://localhost:3000
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
