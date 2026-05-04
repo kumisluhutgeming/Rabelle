@@ -36,13 +36,8 @@ export default function LandingPageClient({ session, stats }: { session: any, st
       <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-xl border-b border-white/50 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            {/* Logo */}
             <div className="flex-shrink-0 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/30">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
-                </svg>
-              </div>
+              <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0 object-contain rounded-xl" />
               <span className="font-bold text-2xl tracking-tight text-slate-800">Rabel<span className="text-sky-600">le</span></span>
             </div>
             

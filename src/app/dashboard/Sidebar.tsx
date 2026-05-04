@@ -22,16 +22,12 @@ export default function Sidebar({ session }: { session: any }) {
       <div className="p-6 flex items-center justify-between">
         {!isSidebarCollapsed ? (
           <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
-            <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
-            </div>
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0 object-contain rounded-xl" />
             <span className="font-bold text-2xl tracking-tight text-slate-800">Rabel<span className="text-sky-600">le</span></span>
           </Link>
         ) : (
           <Link href="/" className="flex items-center justify-center w-full">
-            <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-              <span className="font-bold text-white text-lg">R</span>
-            </div>
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0 object-contain rounded-xl" />
           </Link>
         )}
       </div>
