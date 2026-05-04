@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { uploadGeojson, saveGpsTower } from "./actions";
 import { UploadCloud, CheckCircle2, AlertCircle, Loader2, MapPin, Search } from "lucide-react";
+import { PROVINSI_LIST } from "@/lib/constants";
 
 export default function EditDataPage() {
   const [activeTab, setActiveTab] = useState<'geojson' | 'gps'>('geojson');
@@ -21,10 +22,6 @@ export default function EditDataPage() {
   const [kotaSuggestions, setKotaSuggestions] = useState<string[]>([]);
   const [showKotaSuggestions, setShowKotaSuggestions] = useState(false);
 
-  const PROVINSI_LIST = [
-    "Banten", "DKI Jakarta", "Jawa Barat", "Jawa Tengah", 
-    "Jawa Timur", "DI Jogja", "Bali"
-  ];
 
   // Fetch Autocomplete Operator
   useEffect(() => {

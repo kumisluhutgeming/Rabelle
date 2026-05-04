@@ -54,7 +54,6 @@ export default function TableFilter({
           {jenisList
             .filter(j => j.jenis_komunikasi)
             .map(j => j.jenis_komunikasi!)
-            .filter(j => j.toLowerCase() !== 'lighting')
             .sort((a, b) => {
               if (a.toLowerCase() === 'lainnya') return 1;
               if (b.toLowerCase() === 'lainnya') return -1;

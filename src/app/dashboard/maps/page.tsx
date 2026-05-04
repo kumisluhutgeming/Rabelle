@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import MapWrapper from "./MapWrapper";
 import FloatingFilter from "./FloatingFilter";
+import { EXCLUDED_JENIS } from "@/lib/constants";
 
 export const revalidate = 0; // Disable static rendering
 
@@ -51,6 +52,7 @@ export default async function MapsPage({
       distinct: ['provinsi']
     }),
     prisma.stasiun_radio.findMany({
+      where: { jenis_komunikasi: { notIn: EXCLUDED_JENIS } },
       select: { jenis_komunikasi: true },
       distinct: ['jenis_komunikasi']
     })

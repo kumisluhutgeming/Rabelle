@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:delete-lighting": "node scripts/delete-lighting.js",
+    "db:geocode-fix": "node scripts/reverse-geocode.js"
   },
   "dependencies": {
     "@prisma/client": "6.4.1",

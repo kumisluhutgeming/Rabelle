@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { updateTowerData } from "./actions";
 import { CheckCircle2, AlertCircle, Loader2, Search, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { PROVINSI_LIST } from "@/lib/constants";
 
 interface InitialData {
   id: string;
@@ -33,10 +34,6 @@ export default function EditForm({ initialData }: { initialData: InitialData }) 
   const [kotaSuggestions, setKotaSuggestions] = useState<string[]>([]);
   const [showKotaSuggestions, setShowKotaSuggestions] = useState(false);
 
-  const PROVINSI_LIST = [
-    "Banten", "DKI Jakarta", "Jawa Barat", "Jawa Tengah", 
-    "Jawa Timur", "DI Jogja", "Bali"
-  ];
 
   // Fetch Autocomplete Operator
   useEffect(() => {

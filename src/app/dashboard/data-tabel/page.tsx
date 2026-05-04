@@ -4,6 +4,7 @@ import ActionButtons from "./ActionButtons";
 import TableFilter from "./TableFilter";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { EXCLUDED_JENIS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,7 @@ export default async function DataTabelPage({
       distinct: ['provinsi']
     }),
     prisma.stasiun_radio.findMany({
+      where: { jenis_komunikasi: { notIn: EXCLUDED_JENIS } },
       select: { jenis_komunikasi: true },
       distinct: ['jenis_komunikasi']
     })
