@@ -1,8 +1,9 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
+import ActionButtons from "./ActionButtons";
+import TableFilter from "./TableFilter";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import ActionButtons from "./ActionButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -92,46 +93,14 @@ export default async function DataTabelPage({
       </div>
 
       <div className="bg-white/70 backdrop-blur-[20px] border border-white/60 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-[24px] p-6">
-        <form className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter Jenis Komunikasi</label>
-            <select name="jenis" defaultValue={resolvedParams.jenis || ""} className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all">
-              <option value="">Semua Jenis</option>
-              {jenisList
-                .filter(j => j.jenis_komunikasi)
-                .map(j => j.jenis_komunikasi!)
-                .sort((a, b) => {
-                  if (a.toLowerCase() === 'lainnya') return 1;
-                  if (b.toLowerCase() === 'lainnya') return -1;
-                  return a.localeCompare(b);
-                })
-                .map((jenis, i) => (
-                  <option key={i} value={jenis}>{jenis}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter Provinsi</label>
-            <select name="provinsi" defaultValue={resolvedParams.provinsi || ""} className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all">
-              <option value="">Semua Provinsi</option>
-              {provinsis.filter(p => p.provinsi).map((prov, i) => (
-                <option key={`prov-${i}`} value={prov.provinsi!}>{prov.provinsi}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter Kabupaten/Kota</label>
-            <select name="kota" defaultValue={resolvedParams.kota || ""} className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all">
-              <option value="">Semua Wilayah</option>
-              {locations.map((loc) => (
-                <option key={loc.id.toString()} value={loc.kota}>{loc.kota}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button type="submit" className="bg-slate-800 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-700 transition-colors h-[46px]">Terapkan</button>
-          </div>
-        </form>
+        <TableFilter 
+          jenisList={jenisList} 
+          provinsis={provinsis} 
+          locations={locations}
+          defaultJenis={resolvedParams.jenis || ""}
+          defaultProvinsi={resolvedParams.provinsi || ""}
+          defaultKota={resolvedParams.kota || ""}
+        />
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-sm text-left">
