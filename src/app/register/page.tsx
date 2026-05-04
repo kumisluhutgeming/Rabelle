@@ -44,12 +44,10 @@ export default function RegisterPage() {
       </Link>
 
       <div className="bg-white/85 backdrop-blur-[20px] border border-white/50 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-[24px] w-full max-w-md p-10 flex flex-col items-center mx-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center shadow-lg mb-6">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
+        <div className="mb-6">
+          <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
         </div>
-        <h2 className="text-2xl font-semibold text-[#1d1d1f] mb-2 tracking-tight">Buat Akun Rabelle</h2>
+        <h2 className="text-3xl font-extrabold text-[#1d1d1f] mb-2 tracking-tight">Buat Akun Rabelle</h2>
         <p className="text-gray-500 mb-8 text-sm">Daftar untuk mulai menggunakan fitur.</p>
 
         {error && (

@@ -22,12 +22,12 @@ export default function Sidebar({ session }: { session: any }) {
       <div className="p-6 flex items-center justify-between">
         {!isSidebarCollapsed ? (
           <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
-            <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0 object-contain rounded-xl" />
-            <span className="font-bold text-2xl tracking-tight text-slate-800">Rabel<span className="text-sky-600">le</span></span>
+            <img src="/logo.png" alt="Logo" className="w-12 h-12 shrink-0 object-contain" />
+            <span className="font-extrabold text-3xl tracking-tight text-slate-800">Rabel<span className="text-sky-600">le</span></span>
           </Link>
         ) : (
           <Link href="/" className="flex items-center justify-center w-full">
-            <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0 object-contain rounded-xl" />
+            <img src="/logo.png" alt="Logo" className="w-12 h-12 shrink-0 object-contain" />
           </Link>
         )}
       </div>
@@ -87,14 +87,6 @@ export default function Sidebar({ session }: { session: any }) {
             <LogoutButton isCollapsed={isSidebarCollapsed} />
           </>
         ) : null}
-        <Link 
-          href="/" 
-          title="Kembali ke Beranda"
-          className="flex items-center justify-center gap-3 p-3 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-all w-full font-medium mt-2 pointer-events-auto"
-        >
-          <Home size={20} className="shrink-0" />
-          {!isSidebarCollapsed && <span className="whitespace-nowrap">Ke Beranda</span>}
-        </Link>
       </div>
     </aside>
   );

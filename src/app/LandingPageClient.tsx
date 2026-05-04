@@ -37,8 +37,8 @@ export default function LandingPageClient({ session, stats }: { session: any, st
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex-shrink-0 flex items-center gap-3">
-              <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0 object-contain rounded-xl" />
-              <span className="font-bold text-2xl tracking-tight text-slate-800">Rabel<span className="text-sky-600">le</span></span>
+              <img src="/logo.png" alt="Logo" className="w-12 h-12 shrink-0 object-contain" />
+              <span className="font-extrabold text-3xl tracking-tight text-slate-800">Rabel<span className="text-sky-600">le</span></span>
             </div>
             
             {/* Navigation Links */}

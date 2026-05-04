@@ -58,10 +58,10 @@ export default function LoginPage() {
       </Link>
 
       <div className="bg-white/85 backdrop-blur-[20px] border border-white/50 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-[24px] w-full max-w-md p-10 flex flex-col items-center mx-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center shadow-lg mb-6">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+        <div className="mb-6">
+          <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
         </div>
-        <h2 className="text-2xl font-semibold text-[#1d1d1f] mb-2 tracking-tight">Login ke Rabelle</h2>
+        <h2 className="text-3xl font-extrabold text-[#1d1d1f] mb-2 tracking-tight">Login ke Rabelle</h2>
         <p className="text-gray-500 mb-8 text-sm">Masuk untuk mengakses fitur lengkap</p>
 
         {error && (
