@@ -10,15 +10,19 @@ const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
 const iconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png';
 const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
 
-const customIcon = new L.Icon({
+// Icon sizes for point markers – small when zoomed in (>= 30%), normal when zoomed out
+const ICON_NORMAL: [number, number] = [25, 41];
+const ICON_SMALL: [number, number] = [16, 26];
+
+const makePointIcon = (small: boolean) => new L.Icon({
   iconUrl,
   iconRetinaUrl,
   shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+  iconSize: small ? ICON_SMALL : ICON_NORMAL,
+  iconAnchor: small ? [8, 26] : [12, 41],
   popupAnchor: [1, -34],
   tooltipAnchor: [16, -28],
-  shadowSize: [41, 41],
+  shadowSize: small ? [26, 26] : [41, 41],
 });
 
 interface MarkerData {
@@ -138,20 +142,27 @@ export default function MapComponent({ markers }: { markers: any[] }) {
     }));
   }, [markers, renderMode]);
 
+  // Cluster icon sizes scale with zoom level
+  const clusterSize = zoomPercent < 30 ? 48 : (zoomPercent < 50 ? 34 : 24);
+  const clusterFontSize = zoomPercent < 30 ? 14 : (zoomPercent < 50 ? 11 : 9);
+  const clusterBorder = zoomPercent < 30 ? 3 : 2;
+
   const createClusterIcon = (count: number, type: 'province' | 'kota') => {
-    const bgColor = type === 'province' ? 'rgba(220, 38, 38, 0.9)' : 'rgba(79, 70, 229, 0.9)'; // Red for province, Indigo for kota
+    const bgColor = type === 'province' ? 'rgba(220, 38, 38, 0.9)' : 'rgba(79, 70, 229, 0.9)';
     return L.divIcon({
-      html: `<div style="background: ${bgColor}; backdrop-filter: blur(4px); color: white; font-weight: bold; border-radius: 9999px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); border: 3px solid rgba(255,255,255,0.8); font-size: 14px;">${count}</div>`,
+      html: `<div style="background: ${bgColor}; backdrop-filter: blur(4px); color: white; font-weight: bold; border-radius: 9999px; width: ${clusterSize}px; height: ${clusterSize}px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); border: ${clusterBorder}px solid rgba(255,255,255,0.8); font-size: ${clusterFontSize}px;">${count}</div>`,
       className: 'custom-cluster-icon bg-transparent',
-      iconSize: [48, 48],
-      iconAnchor: [24, 24],
+      iconSize: [clusterSize, clusterSize],
+      iconAnchor: [clusterSize / 2, clusterSize / 2],
     });
   };
 
   // Viewport Culling: Only render markers that are currently visible on the screen
+  // Point icon changes size based on zoom: small when zoomPercent >= 30
+  const pointIcon = makePointIcon(zoomPercent >= 30);
+
   const visibleMarkers = useMemo(() => {
     if (renderMode !== 'point' || !mapBounds) return [];
-    // Pad bounds slightly by 10% to prevent pop-in artifacts when panning
     const extendedBounds = mapBounds.pad(0.1);
     return markers.filter(m => extendedBounds.contains([m.lat, m.lng]));
   }, [markers, mapBounds, renderMode]);
@@ -275,7 +286,7 @@ export default function MapComponent({ markers }: { markers: any[] }) {
             <Marker 
               key={marker.id} 
               position={[marker.lat, marker.lng]}
-              icon={customIcon}
+              icon={pointIcon}
             >
               <Popup>
                 <div className="p-1 min-w-[200px]">
