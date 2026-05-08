@@ -48,14 +48,16 @@ export default async function AnalyticsPage() {
     if (jenis && !EXCLUDED_JENIS.includes(jenis)) {
       const trimmed = jenis.trim();
       const lower = trimmed.toLowerCase();
-      if (lower === "tv" || lower === "bts") {
-        jenis = trimmed.toUpperCase();
+      if (lower === "tv") {
+        jenis = "TV";
+      } else if (lower === "bts" || lower === "telekomunikasi/seluler") {
+        jenis = "Telekomunikasi/Seluler";
       } else if (lower === "radio") {
         jenis = "Radio";
       } else if (lower.includes("5g")) {
-        jenis = "BTS 5G";
+        jenis = "Telekomunikasi/Seluler 5G";
       } else if (lower.includes("4g")) {
-        jenis = "BTS 4G";
+        jenis = "Telekomunikasi/Seluler 4G";
       }
       byJenisMap[jenis] = (byJenisMap[jenis] || 0) + 1;
     }

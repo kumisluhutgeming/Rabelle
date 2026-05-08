@@ -54,11 +54,18 @@ export async function deleteTowerData(id: string) {
   }
 }
 
-export async function exportCsvData(params: { jenis?: string; provinsi?: string; kota?: string }) {
+export async function exportCsvData(params: { jenis?: string; provinsi?: string; kota?: string; operator?: string }) {
   try {
     const where: any = {};
+    const radioWhere: any = {};
     if (params.jenis) {
-      where.stasiun_radio = { jenis_komunikasi: params.jenis };
+      radioWhere.jenis_komunikasi = params.jenis;
+    }
+    if (params.operator) {
+      radioWhere.nama_penyelenggara = params.operator;
+    }
+    if (Object.keys(radioWhere).length > 0) {
+      where.stasiun_radio = radioWhere;
     }
     if (params.provinsi) {
       where.locations = { ...where.locations, provinsi: params.provinsi };

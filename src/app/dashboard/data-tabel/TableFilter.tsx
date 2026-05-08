@@ -6,20 +6,35 @@ export default function TableFilter({
   jenisList, 
   provinsis, 
   locations,
+  operatorsByJenis = {},
   defaultJenis,
   defaultProvinsi,
-  defaultKota
+  defaultKota,
+  defaultOperator
 }: { 
   jenisList: { jenis_komunikasi: string | null }[]; 
   provinsis: { provinsi: string | null }[]; 
   locations: { id: bigint; kota: string; provinsi: string | null }[];
+  operatorsByJenis?: Record<string, string[]>;
   defaultJenis: string;
   defaultProvinsi: string;
   defaultKota: string;
+  defaultOperator: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Compute which operators to show based on selected jenis
+  const allOperators = [...new Set(Object.values(operatorsByJenis).flat())].sort();
+  const filteredOperators = defaultJenis
+    ? (operatorsByJenis[defaultJenis] ?? []).slice().sort()
+    : allOperators;
+
+  // Filter cities client-side for extra safety & speed
+  const filteredCities = defaultProvinsi 
+    ? locations.filter(loc => loc.provinsi === defaultProvinsi).sort((a, b) => a.kota.localeCompare(b.kota))
+    : locations.sort((a, b) => a.kota.localeCompare(b.kota));
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
@@ -32,7 +47,17 @@ export default function TableFilter({
       current.delete(name);
     }
     
-    // reset page to 1 when filter changes if page exists in searchParams
+    // When jenis changes, reset operator so stale selection is cleared
+    if (name === "jenis") {
+      current.delete("operator");
+    }
+
+    // When provinsi changes, reset kota so stale selection is cleared
+    if (name === "provinsi") {
+      current.delete("kota");
+    }
+
+    // reset page to 1 when filter changes
     current.delete('page');
 
     const search = current.toString();
@@ -65,6 +90,25 @@ export default function TableFilter({
         </select>
       </div>
       <div className="flex-1">
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+          Filter Operator
+          {defaultJenis && (
+            <span className="ml-1 text-[#007AFF] normal-case font-normal">({filteredOperators.length})</span>
+          )}
+        </label>
+        <select 
+          name="operator" 
+          value={defaultOperator} 
+          onChange={handleFilterChange}
+          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
+        >
+          <option value="">Semua Operator</option>
+          {filteredOperators.filter(Boolean).map((op, i) => (
+            <option key={`op-${i}`} value={op}>{op}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex-1">
         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter Provinsi</label>
         <select 
           name="provinsi" 
@@ -87,7 +131,7 @@ export default function TableFilter({
           className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
         >
           <option value="">Semua Wilayah</option>
-          {locations.map((loc) => (
+          {filteredCities.map((loc) => (
             <option key={loc.id.toString()} value={loc.kota}>{loc.kota}</option>
           ))}
         </select>

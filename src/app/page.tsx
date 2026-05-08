@@ -12,7 +12,7 @@ export default async function LandingPage() {
   // Fetch dynamic stats
   const [totalTowers, btsCount, tvCount, radioCount] = await Promise.all([
     prisma.pengukuran.count(),
-    prisma.pengukuran.count({ where: { stasiun_radio: { jenis_komunikasi: 'BTS' } } }),
+    prisma.pengukuran.count({ where: { stasiun_radio: { jenis_komunikasi: 'Telekomunikasi/Seluler' } } }),
     prisma.pengukuran.count({ where: { stasiun_radio: { jenis_komunikasi: 'TV' } } }),
     prisma.pengukuran.count({ where: { stasiun_radio: { jenis_komunikasi: 'Radio' } } })
   ]);

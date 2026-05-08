@@ -17,7 +17,7 @@ export default function Sidebar({ session }: { session: any }) {
 
   return (
     <aside 
-      className={`bg-white/80 backdrop-blur-xl border-r border-black/5 shadow-sm h-screen ${positionClass} flex flex-col z-50 transition-all duration-500 ease-in-out ${widthClass} ${opacityClass}`}
+      className={`bg-white/80 backdrop-blur-xl border-r border-black/5 shadow-sm h-screen ${positionClass} flex flex-col z-50 transition-all duration-500 ease-in-out ${widthClass} ${opacityClass} !rounded-r-[40px]`}
     >
       <div className="p-6 flex items-center justify-between">
         {!isSidebarCollapsed ? (

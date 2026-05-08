@@ -65,7 +65,7 @@ export async function uploadGeojson(formData: FormData) {
       const props = feature.properties || {};
       const operatorName = props.operator || props.name || props["tower:type"] || "Unknown";
       const jenisKomp =
-        props["tower:type"] === "communication" ? "BTS" : props["tower:type"] || "Lainnya";
+        props["tower:type"] === "communication" ? "Telekomunikasi/Seluler" : props["tower:type"] || "Lainnya";
 
       const delta = 0.000001;
       const existingLoks = await prisma.lokasi_pemancar.findMany({

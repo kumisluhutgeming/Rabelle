@@ -9,6 +9,7 @@ interface ExportButtonProps {
     jenis?: string;
     provinsi?: string;
     kota?: string;
+    operator?: string;
   };
 }
 

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function DataTabelPage({
   searchParams
 }: {
-  searchParams: Promise<{ jenis?: string; provinsi?: string; kota?: string; page?: string }>
+  searchParams: Promise<{ jenis?: string; provinsi?: string; kota?: string; operator?: string; page?: string }>
 }) {
   const session = await getServerSession(authOptions);
   const resolvedParams = await searchParams;
@@ -25,10 +25,16 @@ export default async function DataTabelPage({
   const where: any = {};
   const locWhere: any = {};
   
+  const radioWhere: any = {};
   if (resolvedParams.jenis) {
-    where.stasiun_radio = {
-      jenis_komunikasi: resolvedParams.jenis
-    };
+    radioWhere.jenis_komunikasi = resolvedParams.jenis;
+  }
+  if (resolvedParams.operator) {
+    radioWhere.nama_penyelenggara = resolvedParams.operator;
+  }
+
+  if (Object.keys(radioWhere).length > 0) {
+    where.stasiun_radio = radioWhere;
   }
 
   if (resolvedParams.provinsi) {
@@ -40,7 +46,7 @@ export default async function DataTabelPage({
     where.locations = { ...where.locations, kota: resolvedParams.kota };
   }
 
-  const [totalItems, pengukuranList, locations, provinsis, jenisList] = await Promise.all([
+  const [totalItems, pengukuranList, locations, provinsis, jenisList, operatorList] = await Promise.all([
     prisma.pengukuran.count({ where }),
     prisma.pengukuran.findMany({
       where,
@@ -66,8 +72,23 @@ export default async function DataTabelPage({
       where: { jenis_komunikasi: { notIn: EXCLUDED_JENIS } },
       select: { jenis_komunikasi: true },
       distinct: ['jenis_komunikasi']
+    }),
+    // Fetch (jenis, operator) pairs for cascading filter
+    prisma.stasiun_radio.findMany({
+      select: { nama_penyelenggara: true, jenis_komunikasi: true },
+      distinct: ['nama_penyelenggara', 'jenis_komunikasi']
     })
   ]);
+
+  // Build grouped map: { jenis -> string[] }
+  const operatorsByJenis: Record<string, string[]> = {};
+  for (const row of operatorList) {
+    const jenis = row.jenis_komunikasi || 'Lainnya';
+    if (!operatorsByJenis[jenis]) operatorsByJenis[jenis] = [];
+    if (!operatorsByJenis[jenis].includes(row.nama_penyelenggara)) {
+      operatorsByJenis[jenis].push(row.nama_penyelenggara);
+    }
+  }
 
   const totalPages = Math.ceil(totalItems / limit);
 
@@ -97,9 +118,11 @@ export default async function DataTabelPage({
           jenisList={jenisList} 
           provinsis={provinsis} 
           locations={locations}
+          operatorsByJenis={operatorsByJenis}
           defaultJenis={resolvedParams.jenis || ""}
           defaultProvinsi={resolvedParams.provinsi || ""}
           defaultKota={resolvedParams.kota || ""}
+          defaultOperator={resolvedParams.operator || ""}
         />
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -155,12 +178,12 @@ export default async function DataTabelPage({
             <p className="text-sm text-slate-500">Menampilkan halaman {page} dari {totalPages}</p>
             <div className="flex gap-2">
               {page > 1 && (
-                <Link href={`?page=${page - 1}&jenis=${resolvedParams.jenis || ''}&provinsi=${resolvedParams.provinsi || ''}&kota=${resolvedParams.kota || ''}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+                <Link href={`?page=${page - 1}&jenis=${resolvedParams.jenis || ''}&provinsi=${resolvedParams.provinsi || ''}&kota=${resolvedParams.kota || ''}&operator=${resolvedParams.operator || ''}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
                   Sebelumnya
                 </Link>
               )}
               {page < totalPages && (
-                <Link href={`?page=${page + 1}&jenis=${resolvedParams.jenis || ''}&provinsi=${resolvedParams.provinsi || ''}&kota=${resolvedParams.kota || ''}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+                <Link href={`?page=${page + 1}&jenis=${resolvedParams.jenis || ''}&provinsi=${resolvedParams.provinsi || ''}&kota=${resolvedParams.kota || ''}&operator=${resolvedParams.operator || ''}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
                   Selanjutnya
                 </Link>
               )}

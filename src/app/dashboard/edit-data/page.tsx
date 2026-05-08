@@ -325,7 +325,7 @@ export default function EditDataPage() {
                   <div className="flex-1 space-y-2">
                     <label className="block text-sm font-semibold text-slate-700">Jenis Komunikasi <span className="text-red-500">*</span></label>
                     <select name="jenis" required className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm bg-white">
-                      <option value="BTS">BTS</option>
+                      <option value="Telekomunikasi/Seluler">Telekomunikasi/Seluler</option>
                       <option value="TV">TV</option>
                       <option value="Radio">Radio</option>
                       <option value="Lainnya">Lainnya</option>
