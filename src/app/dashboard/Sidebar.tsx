@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useIdle } from "./IdleProvider";
 import LogoutButton from "./LogoutButton";
+import { useTheme } from "next-themes";
 import { LayoutDashboard, Map as MapIcon, Table, Settings, Home, ChevronLeft, ChevronRight, BarChart2, ClipboardList } from "lucide-react";
 
 export default function Sidebar({ session }: { session: any }) {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const pathname = usePathname();
   const { isUiVisible, isMapPage, setHoverState, isSidebarCollapsed, setIsSidebarCollapsed } = useIdle();
 
@@ -17,17 +24,29 @@ export default function Sidebar({ session }: { session: any }) {
 
   return (
     <aside 
-      className={`bg-white/80 backdrop-blur-xl border-r border-black/5 shadow-sm h-screen ${positionClass} flex flex-col z-50 transition-all duration-500 ease-in-out ${widthClass} ${opacityClass} !rounded-r-[40px]`}
+      className={`bg-card border-r border-border ${positionClass} flex flex-col z-50 transition-all duration-300 ease-in-out ${widthClass} ${opacityClass} !rounded-r-2xl shadow-sm`}
     >
-      <div className="p-6 flex items-center justify-between">
+      <div className="p-8 flex items-center justify-between">
         {!isSidebarCollapsed ? (
-          <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
-            <img src="/logo.png" alt="Logo" className="w-12 h-12 shrink-0 object-contain" />
-            <span className="font-extrabold text-3xl tracking-tight text-slate-800">Rabel<span className="text-sky-600">le</span></span>
+          <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap group">
+            <div className="w-9 h-9 flex items-center justify-center group-hover:scale-110 transition-transform">
+              {mounted && theme === "dark" ? (
+                <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-all" />
+              ) : (
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
+              )}
+            </div>
+            <span className="font-semibold text-lg tracking-tight text-foreground">Rabelle</span>
           </Link>
         ) : (
           <Link href="/" className="flex items-center justify-center w-full">
-            <img src="/logo.png" alt="Logo" className="w-12 h-12 shrink-0 object-contain" />
+            <div className="w-9 h-9 flex items-center justify-center hover:scale-110 transition-transform">
+              {mounted && theme === "dark" ? (
+                <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain opacity-90 transition-all" />
+              ) : (
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-80 transition-all" />
+              )}
+            </div>
           </Link>
         )}
       </div>
@@ -35,66 +54,65 @@ export default function Sidebar({ session }: { session: any }) {
       {/* Collapse Toggle */}
       <button 
         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        className="absolute -right-3 top-20 bg-white border border-slate-200 rounded-full p-1 shadow-md hover:bg-slate-50 transition-colors z-50 text-slate-500 pointer-events-auto"
+        className="absolute -right-3 top-20 bg-card border border-border rounded-full p-1.5 shadow-sm hover:bg-muted transition-all z-50 text-muted-foreground hover:text-foreground"
       >
-        {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        {isSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
-      <div className="flex-1 overflow-y-auto py-4 px-3 overflow-x-hidden">
-        {!isSidebarCollapsed && <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Menu Utama</p>}
-        <nav className="flex flex-col gap-2">
-          <Link 
-            href="/dashboard" 
-            title="Home"
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${pathname === "/dashboard" ? "bg-sky-50 text-sky-600" : "text-slate-600 hover:bg-black/5"}`}
-          >
-            <LayoutDashboard size={20} className="shrink-0" />
-            {!isSidebarCollapsed && <span className="whitespace-nowrap">Home</span>}
-          </Link>
-          <Link 
-            href="/dashboard/maps" 
-            title="Peta Persebaran"
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${pathname === "/dashboard/maps" ? "bg-sky-50 text-sky-600" : "text-slate-600 hover:bg-black/5"}`}
-          >
-            <MapIcon size={20} className="shrink-0" />
-            {!isSidebarCollapsed && <span className="whitespace-nowrap">Peta Persebaran</span>}
-          </Link>
-          <Link 
-            href="/dashboard/data-tabel" 
-            title="Tabel Data"
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${pathname === "/dashboard/data-tabel" ? "bg-sky-50 text-sky-600" : "text-slate-600 hover:bg-black/5"}`}
-          >
-            <Table size={20} className="shrink-0" />
-            {!isSidebarCollapsed && <span className="whitespace-nowrap">Tabel Data</span>}
-          </Link>
-        </nav>
+      <div className="flex-1 overflow-y-auto py-2 px-3 space-y-8">
+        <div>
+          {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 opacity-50">Utama</p>}
+          <nav className="flex flex-col gap-1">
+            <Link 
+              href="/dashboard" 
+              className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
+            >
+              <LayoutDashboard size={18} className="shrink-0" />
+              {!isSidebarCollapsed && <span>Ringkasan</span>}
+            </Link>
+            <Link 
+              href="/dashboard/maps" 
+              className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/maps" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
+            >
+              <MapIcon size={18} className="shrink-0" />
+              {!isSidebarCollapsed && <span>Peta Persebaran</span>}
+            </Link>
+            <Link 
+              href="/dashboard/data-tabel" 
+              className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/data-tabel" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
+            >
+              <Table size={18} className="shrink-0" />
+              {!isSidebarCollapsed && <span>Katalog Data</span>}
+            </Link>
+          </nav>
+        </div>
+
+        {session?.user?.isAdmin && (
+          <div>
+            {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 opacity-50">Administrasi</p>}
+            <nav className="flex flex-col gap-1">
+              <Link 
+                href="/dashboard/edit-data"
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/edit-data" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
+              >
+                <Settings size={18} className="shrink-0" />
+                {!isSidebarCollapsed && <span>Konfigurasi Data</span>}
+              </Link>
+              <Link 
+                href="/dashboard/audit"
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/audit" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
+              >
+                <ClipboardList size={18} className="shrink-0" />
+                {!isSidebarCollapsed && <span>Log Aktivitas</span>}
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
 
-      <div className="border-t border-black/5 my-4"></div>
-
-      <div className="flex flex-col gap-2 px-3 pb-6">
+      <div className="p-4">
         {session ? (
-          <>
-            {session?.user?.isAdmin && (
-              <>
-                <Link 
-                  href="/dashboard/edit-data"
-                  className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full font-medium mb-1 ${pathname === "/dashboard/edit-data" ? "bg-indigo-100 text-indigo-700" : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"}`}
-                >
-                  <Settings size={20} className="shrink-0" />
-                  {!isSidebarCollapsed && <span className="whitespace-nowrap">Edit Data</span>}
-                </Link>
-                <Link 
-                  href="/dashboard/audit"
-                  className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full font-medium mb-2 ${pathname === "/dashboard/audit" ? "bg-amber-100 text-amber-700" : "bg-amber-50 text-amber-600 hover:bg-amber-100"}`}
-                >
-                  <ClipboardList size={20} className="shrink-0" />
-                  {!isSidebarCollapsed && <span className="whitespace-nowrap">Log Aktivitas</span>}
-                </Link>
-              </>
-            )}
-            <LogoutButton isCollapsed={isSidebarCollapsed} />
-          </>
+          <LogoutButton isCollapsed={isSidebarCollapsed} />
         ) : null}
       </div>
     </aside>

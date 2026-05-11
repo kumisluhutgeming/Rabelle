@@ -93,6 +93,18 @@ Jalankan file `start_rabelle.bat` dengan klik dua kali.
 
 ---
 
+## 🎨 Versi 2.0 (Modernization Overhaul)
+
+Branch `v2` membawa pembaruan besar pada sisi antarmuka dan pengalaman pengguna (UI/UX) dengan standar industri modern:
+
+- **Professional SaaS Aesthetic**: Desain minimalis yang tenang dan profesional, terinspirasi dari produk kelas dunia seperti Linear dan Vercel.
+- **Full Dark Mode Support**: Dukungan mode gelap sinematik yang terintegrasi di seluruh aplikasi (Dashboard, Peta, & Landing Page).
+- **Optimized Layouts**: Penggunaan ruang fungsional yang maksimal dengan densitas data yang dioptimalkan dan tata letak *bento-grid*.
+- **High-Conversion Landing Page**: Halaman depan yang dirancang ulang untuk kejelasan informasi dan kredibilitas produk.
+- **Global Design System**: Implementasi token desain semantik untuk konsistensi visual di seluruh modul.
+
+---
+
 ## 📄 Lisensi
 Proyek ini dikembangkan untuk kebutuhan internal **Rabelle Intelligence**. Hak cipta © 2026.
 

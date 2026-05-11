@@ -182,8 +182,8 @@ function ZoomControlsCustom() {
   const map = useMap();
   return (
     <div className="flex flex-col gap-1">
-      <button onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} className="w-8 h-8 rounded-lg bg-white/90 flex items-center justify-center text-slate-700 hover:bg-white shadow-sm border border-black/5 transition-transform active:scale-90"><Plus size={14} /></button>
-      <button onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} className="w-8 h-8 rounded-lg bg-white/90 flex items-center justify-center text-slate-700 hover:bg-white shadow-sm border border-black/5 transition-transform active:scale-90"><Minus size={14} /></button>
+      <button onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} className="w-9 h-9 rounded-xl bg-card flex items-center justify-center text-foreground hover:bg-accent shadow-sm border border-border transition-transform active:scale-90"><Plus size={14} /></button>
+      <button onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} className="w-9 h-9 rounded-xl bg-card flex items-center justify-center text-foreground hover:bg-accent shadow-sm border border-border transition-transform active:scale-90"><Minus size={14} /></button>
     </div>
   );
 }
@@ -302,10 +302,10 @@ export default function MapComponent({ markers: initialMarkers = [], locations =
     <div className="h-screen w-full relative z-0 bg-[#E5E7EB] overflow-hidden">
       {/* Search Omnibox */}
       <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] w-[90%] max-w-[450px]">
-        <div className="liquid-glass !rounded-[20px] shadow-lg">
+        <div className="surface-card !rounded-[20px] shadow-lg">
           <div className="flex items-center px-4 py-3">
-            {isLoading ? <Loader2 size={16} className="animate-spin text-indigo-500 mr-2.5" /> : <Search className="w-4 h-4 text-slate-400 mr-2.5" />}
-            <input type="text" placeholder="Cari menara atau wilayah..." className="bg-transparent border-none outline-none w-full text-sm text-slate-800 font-semibold placeholder:text-slate-400" onFocus={() => setIsSearchFocused(true)} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            {isLoading ? <Loader2 size={16} className="animate-spin text-primary mr-2.5" /> : <Search className="w-4 h-4 text-muted-foreground mr-2.5" />}
+            <input type="text" placeholder="Cari menara atau wilayah..." className="bg-transparent border-none outline-none w-full text-sm text-foreground font-bold placeholder:text-muted-foreground" onFocus={() => setIsSearchFocused(true)} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
         </div>
       </motion.div>
@@ -314,32 +314,32 @@ export default function MapComponent({ markers: initialMarkers = [], locations =
       <AnimatePresence>
         {selectedMarker && (
           <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="absolute top-0 right-0 h-full z-[1100] p-4 w-full max-w-[340px]">
-            <div className="liquid-glass h-full shadow-2xl">
+            <div className="surface-card h-full shadow-2xl overflow-hidden">
               <div className="relative h-36 flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-b from-indigo-600 to-indigo-800" />
-                <button onClick={() => setSelectedMarker(null)} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full z-30"><X size={18} /></button>
+                <div className="absolute inset-0 bg-primary/90" />
+                <button onClick={() => setSelectedMarker(null)} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full z-30 transition-colors"><X size={18} /></button>
                 <div className="relative z-20 text-center px-4">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/20"><Wifi size={24} className="text-white" /></div>
+                  <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-2 border border-white/20"><Wifi size={24} className="text-white" /></div>
                   <h2 className="text-white font-black text-lg leading-tight">{selectedMarker.nama}</h2>
                 </div>
               </div>
               <div className="p-5 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
                 <div className="space-y-4">
                   {[
-                    { label: 'Kategori', value: selectedMarker.jenis, icon: Layers, color: 'text-rose-500', bg: 'bg-rose-50' },
-                    { label: 'Lokasi', value: `${selectedMarker.kota}, ${selectedMarker.provinsi}`, icon: Navigation, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-                    { label: 'Koordinat', value: `${selectedMarker.lat}, ${selectedMarker.lng}`, icon: MapIcon, color: 'text-amber-500', bg: 'bg-amber-50', mono: true },
+                    { label: 'Kategori', value: selectedMarker.jenis, icon: Layers, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                    { label: 'Lokasi', value: `${selectedMarker.kota}, ${selectedMarker.provinsi}`, icon: Navigation, color: 'text-primary', bg: 'bg-primary/10' },
+                    { label: 'Koordinat', value: `${selectedMarker.lat}, ${selectedMarker.lng}`, icon: MapIcon, color: 'text-amber-500', bg: 'bg-amber-500/10', mono: true },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-[20px] bg-white/30 border border-white/40 shadow-sm">
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-[20px] bg-muted/30 border border-border shadow-sm">
                       <div className={`w-9 h-9 rounded-xl ${item.bg} ${item.color} flex items-center justify-center`}><item.icon size={16} /></div>
                       <div>
-                        <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.label}</div>
-                        <div className={`text-xs font-black text-slate-700 ${item.mono ? 'font-mono' : ''}`}>{item.value}</div>
+                        <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{item.label}</div>
+                        <div className={`text-xs font-bold text-foreground ${item.mono ? 'font-mono' : ''}`}>{item.value}</div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <button className="w-full bg-slate-900 text-white p-4 rounded-[20px] text-xs font-black flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg"><ExternalLink size={14} /> Buka di Maps</button>
+                <button className="w-full bg-primary text-primary-foreground p-4 rounded-[20px] text-xs font-black flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20"><ExternalLink size={14} /> Buka di Maps</button>
               </div>
             </div>
           </motion.div>
@@ -375,18 +375,18 @@ export default function MapComponent({ markers: initialMarkers = [], locations =
         {userPos && <Marker position={userPos} icon={new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize:[20,32], iconAnchor:[10,32] })} />}
 
         <div className={`leaflet-bottom leaflet-right z-[1000] p-6 pointer-events-auto flex flex-col items-end gap-3 transition-opacity duration-300 ${!isUiVisible ? "opacity-0" : "opacity-100"}`}>
-          <div className="liquid-glass p-1 !rounded-2xl flex flex-row gap-1 shadow-lg pointer-events-auto">
+          <div className="surface-card p-1 flex flex-row gap-1 shadow-lg pointer-events-auto">
             {[
               { key: 'seluler', icon: Signal, color: 'bg-emerald-500' },
-              { key: 'tv', icon: Tv, color: 'bg-indigo-500' },
+              { key: 'tv', icon: Tv, color: 'bg-primary' },
               { key: 'radio', icon: RadioIcon, color: 'bg-orange-500' },
             ].map((layer) => (
-              <button key={layer.key} onClick={(e) => { e.stopPropagation(); setActiveLayers(l => ({ ...l, [layer.key]: !l[layer.key as keyof typeof l] })); }} className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${activeLayers[layer.key as keyof typeof activeLayers] ? `${layer.color} text-white shadow-md` : 'bg-white/30 text-slate-400 opacity-50 hover:opacity-100'}`}><layer.icon size={14} /></button>
+              <button key={layer.key} onClick={(e) => { e.stopPropagation(); setActiveLayers(l => ({ ...l, [layer.key]: !l[layer.key as keyof typeof l] })); }} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${activeLayers[layer.key as keyof typeof activeLayers] ? `${layer.color} text-white shadow-md` : 'bg-muted text-muted-foreground hover:bg-accent'}`}><layer.icon size={14} /></button>
             ))}
           </div>
           <div className="flex items-center gap-2 pointer-events-auto">
-            <button onClick={(e) => { e.stopPropagation(); setShowCoverage(!showCoverage); }} className={`liquid-glass px-4 py-2.5 !rounded-xl text-[11px] font-black transition-all flex items-center gap-2 border-none shadow-lg ${showCoverage ? "bg-slate-900 text-white" : "bg-white/80 text-slate-700"}`}><Layers size={14} /> {showCoverage ? "Radius: ON" : "Radius: OFF"}</button>
-            <div className="liquid-glass px-3 py-2.5 !rounded-xl text-[10px] font-black text-slate-700 bg-white/80 shadow-lg min-w-[50px] text-center font-mono">{zoomPercent}%</div>
+            <button onClick={(e) => { e.stopPropagation(); setShowCoverage(!showCoverage); }} className={`surface-card px-4 py-2.5 !rounded-xl text-[11px] font-bold transition-all flex items-center gap-2 shadow-lg ${showCoverage ? "bg-primary text-primary-foreground border-transparent" : "bg-card text-foreground"}`}><Layers size={14} /> {showCoverage ? "Radius: Aktif" : "Radius: Mati"}</button>
+            <div className="surface-card px-3 py-2.5 !rounded-xl text-[10px] font-bold text-foreground shadow-lg min-w-[50px] text-center font-mono">{zoomPercent}%</div>
             <ZoomControlsCustom />
           </div>
         </div>

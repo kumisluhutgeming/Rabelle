@@ -45,9 +45,9 @@ function SearchableSelect({
               onChange(name, ""); // Allow clearing
             }
           }}
-          className="w-full bg-white border border-slate-200 text-slate-800 rounded-lg pl-3 pr-8 py-2 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500/30 transition-all shadow-sm outline-none"
+          className="w-full bg-background border border-border text-foreground rounded-lg pl-3 pr-8 py-2 text-[10px] font-bold focus:ring-2 focus:ring-primary/20 transition-all shadow-sm outline-none"
         />
-        <ChevronDown size={12} className="absolute right-2.5 text-slate-400 pointer-events-none" />
+        <ChevronDown size={12} className="absolute right-2.5 text-muted-foreground pointer-events-none" />
       </div>
       <AnimatePresence>
         {isOpen && (
@@ -56,15 +56,15 @@ function SearchableSelect({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-40 overflow-y-auto hide-scrollbar"
+            className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-40 overflow-y-auto hide-scrollbar"
           >
             {filteredOptions.length === 0 ? (
-              <div className="p-2 text-[10px] text-slate-500 text-center font-medium">Tidak ditemukan</div>
+              <div className="p-2 text-[10px] text-muted-foreground text-center font-medium">Tidak ditemukan</div>
             ) : (
               filteredOptions.map((opt, i) => (
                 <div
                   key={i}
-                  className="px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer transition-colors border-b border-slate-50 last:border-0"
+                  className="px-3 py-2 text-[10px] font-bold text-foreground hover:bg-muted cursor-pointer transition-colors border-b border-border last:border-0"
                   onMouseDown={(e) => {
                     // Use onMouseDown instead of onClick to fire before onBlur of input
                     e.preventDefault();
@@ -168,7 +168,7 @@ export default function FloatingFilter({
         transition={{ type: "tween", duration: 0.2 }}
         className="relative"
       >
-        <div className={`liquid-glass shadow-xl overflow-hidden transition-all duration-500 ${isExpanded ? "w-[280px] rounded-2xl" : "w-[50px] h-[50px] rounded-[20px]"}`}>
+        <div className={`surface-card shadow-xl overflow-hidden transition-all duration-500 ${isExpanded ? "w-[280px]" : "w-[50px] h-[50px] !rounded-[20px]"}`}>
           <AnimatePresence mode="wait">
             {!isExpanded ? (
               <motion.button 
@@ -210,7 +210,7 @@ export default function FloatingFilter({
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                       </button>
                     )}
-                    <button onClick={() => setIsExpanded(false)} className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-all" title="Tutup Filter">
+                    <button onClick={() => setIsExpanded(false)} className="p-1.5 bg-muted hover:bg-accent text-muted-foreground rounded-lg transition-all" title="Tutup Filter">
                       <ChevronLeft size={16} />
                     </button>
                   </div>
@@ -223,7 +223,7 @@ export default function FloatingFilter({
                       <Radio size={12} className="text-indigo-600" />
                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Infrastruktur</label>
                     </div>
-                    <select name="jenis" value={defaultJenis} onChange={handleFilterChange} className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-2.5 text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer appearance-none shadow-sm">
+                    <select name="jenis" value={defaultJenis} onChange={handleFilterChange} className="w-full bg-background border border-border text-foreground rounded-xl px-3 py-2.5 text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer appearance-none shadow-sm">
                       <option value="">Semua Kategori</option>
                       {jenisList.filter(j => j.jenis_komunikasi).map(j => j.jenis_komunikasi!).sort().map((jenis, i) => (
                         <option key={i} value={jenis}>{jenis}</option>
@@ -237,7 +237,7 @@ export default function FloatingFilter({
                       <Globe size={12} className="text-emerald-600" />
                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Operator</label>
                     </div>
-                    <select name="operator" value={defaultOperator} onChange={handleFilterChange} className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-2.5 text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer appearance-none shadow-sm">
+                    <select name="operator" value={defaultOperator} onChange={handleFilterChange} className="w-full bg-background border border-border text-foreground rounded-xl px-3 py-2.5 text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer appearance-none shadow-sm">
                       <option value="">Semua Operator</option>
                       {filteredOperators.filter(Boolean).map((op, i) => (
                         <option key={`op-${i}`} value={op}>{op}</option>
@@ -282,35 +282,35 @@ export default function FloatingFilter({
       </motion.div>
       </div>
 
-      {/* Active Filter Badges (Idea 3) */}
+      {/* Active Filter Badges */}
       <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[1200] flex flex-wrap justify-center items-center gap-2 transition-all duration-500 ease-out pointer-events-none ${!isUiVisible ? "opacity-0 -translate-y-4" : "opacity-100 translate-y-0"}`}>
         <AnimatePresence>
           {defaultJenis && (
-            <motion.div key="badge-jenis" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="liquid-glass pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg border-none">
-              <Radio size={12} className="text-indigo-500" />
-              <span className="text-[10px] font-black text-slate-700">{defaultJenis}</span>
-              <button onClick={() => removeFilter('jenis')} className="ml-1 w-4 h-4 flex items-center justify-center bg-slate-200/50 hover:bg-rose-500 text-slate-500 hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <motion.div key="badge-jenis" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="surface-card pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg">
+              <Radio size={12} className="text-primary" />
+              <span className="text-[10px] font-bold text-foreground">{defaultJenis}</span>
+              <button onClick={() => removeFilter('jenis')} className="ml-1 w-4 h-4 flex items-center justify-center bg-muted hover:bg-rose-500 text-muted-foreground hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </motion.div>
           )}
           {defaultOperator && (
-            <motion.div key="badge-operator" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="liquid-glass pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg border-none">
-              <Globe size={12} className="text-emerald-500" />
-              <span className="text-[10px] font-black text-slate-700">{defaultOperator}</span>
-              <button onClick={() => removeFilter('operator')} className="ml-1 w-4 h-4 flex items-center justify-center bg-slate-200/50 hover:bg-rose-500 text-slate-500 hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <motion.div key="badge-operator" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="surface-card pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg">
+              <Globe size={12} className="text-primary" />
+              <span className="text-[10px] font-bold text-foreground">{defaultOperator}</span>
+              <button onClick={() => removeFilter('operator')} className="ml-1 w-4 h-4 flex items-center justify-center bg-muted hover:bg-rose-500 text-muted-foreground hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </motion.div>
           )}
           {defaultProvinsi && (
-            <motion.div key="badge-provinsi" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="liquid-glass pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg border-none">
-              <MapPin size={12} className="text-rose-500" />
-              <span className="text-[10px] font-black text-slate-700">{defaultProvinsi}</span>
-              <button onClick={() => removeFilter('provinsi')} className="ml-1 w-4 h-4 flex items-center justify-center bg-slate-200/50 hover:bg-rose-500 text-slate-500 hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <motion.div key="badge-provinsi" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="surface-card pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg">
+              <MapPin size={12} className="text-primary" />
+              <span className="text-[10px] font-bold text-foreground">{defaultProvinsi}</span>
+              <button onClick={() => removeFilter('provinsi')} className="ml-1 w-4 h-4 flex items-center justify-center bg-muted hover:bg-rose-500 text-muted-foreground hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </motion.div>
           )}
           {defaultKota && (
-            <motion.div key="badge-kota" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="liquid-glass pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg border-none">
-              <MapPin size={12} className="text-rose-600" />
-              <span className="text-[10px] font-black text-slate-700">{defaultKota}</span>
-              <button onClick={() => removeFilter('kota')} className="ml-1 w-4 h-4 flex items-center justify-center bg-slate-200/50 hover:bg-rose-500 text-slate-500 hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <motion.div key="badge-kota" initial={{ opacity: 0, y: -10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="surface-card pointer-events-auto flex items-center gap-2 px-3 py-1.5 shadow-lg">
+              <MapPin size={12} className="text-primary" />
+              <span className="text-[10px] font-bold text-foreground">{defaultKota}</span>
+              <button onClick={() => removeFilter('kota')} className="ml-1 w-4 h-4 flex items-center justify-center bg-muted hover:bg-rose-500 text-muted-foreground hover:text-white rounded-full transition-colors"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </motion.div>
           )}
         </AnimatePresence>

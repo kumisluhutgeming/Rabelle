@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useIdle } from "./IdleProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function DashboardHeader({ session }: { session: any }) {
   const { isMapPage } = useIdle();
@@ -13,16 +14,25 @@ export default function DashboardHeader({ session }: { session: any }) {
 
   return (
     <header 
-      className="bg-white/75 backdrop-blur-[20px] border-b border-black/5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] h-[70px] flex justify-end items-center px-6 z-50 shrink-0 transition-all duration-500 ease-in-out !rounded-b-3xl"
+      className="bg-card border-b border-border h-16 flex justify-end items-center px-8 gap-6 z-50 shrink-0 !rounded-b-2xl shadow-sm"
     >
-      <Link href={href} className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-xl transition-colors cursor-pointer" title={isAdmin ? "Log Aktivitas Audit" : "Profil"}>
-        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[#007AFF] font-bold text-sm">
-          {session?.user?.name ? session.user.name.substring(0, 1).toUpperCase() : "G"}
-        </div>
-        <span className="text-sm font-semibold text-[#1d1d1f]">
-          {session?.user?.name ? `Halo, ${session.user.name}` : "Guest (Belum Login)"}
-        </span>
-      </Link>
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
+        <div className="w-[1px] h-4 bg-border" />
+        <Link href={href} className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-muted/50 transition-all group" title={isAdmin ? "Log Aktivitas" : "Profil"}>
+          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-xs shadow-sm">
+            {session?.user?.name ? session.user.name.substring(0, 1).toUpperCase() : "G"}
+          </div>
+          <div className="hidden sm:flex flex-col">
+            <span className="text-xs font-semibold text-foreground leading-tight">
+              {session?.user?.name || "Tamu"}
+            </span>
+            <span className="text-[10px] text-muted-foreground leading-tight">
+              {isAdmin ? "Administrator" : "Pengamat"}
+            </span>
+          </div>
+        </Link>
+      </div>
     </header>
   );
 }

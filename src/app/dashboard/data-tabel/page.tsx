@@ -104,95 +104,96 @@ export default async function DataTabelPage({
   const totalPages = Math.ceil(totalItems / limit);
 
   return (
-    <div className="p-4">
-      <div className="max-w-6xl mx-auto space-y-4 animate-fade-in-up">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
-        <div>
-          <h1 className="text-xl font-bold text-[#1d1d1f] tracking-tight">Data Infrastruktur</h1>
-          <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-widest font-bold">Daftar lengkap menara komunikasi dan stasiun radio</p>
-        </div>
+    <div className="p-6 lg:p-8">
+      <div className="max-w-[1600px] mx-auto space-y-8 animate-fade-in-up">
+        <header className="flex items-baseline justify-between border-b border-border pb-4">
+          <div>
+            <h1 className="text-4xl font-extrabold text-foreground tracking-tight">Katalog Data</h1>
+            <p className="text-muted-foreground mt-1 text-sm font-medium">Registri infrastruktur telekomunikasi nasional.</p>
+          </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          {session ? (
-            <ExportButton params={resolvedParams} />
-          ) : (
-            <Link href="/login" className="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-              Login untuk Unduh
-            </Link>
-          )}
-        </div>
-      </div>
+          <div className="flex items-center gap-3">
+            {session ? (
+              <ExportButton params={resolvedParams} />
+            ) : (
+              <Link href="/login" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-bold text-[10px] transition-all hover:opacity-90 shadow-sm flex items-center gap-2 uppercase tracking-widest">
+                Login untuk Unduh
+              </Link>
+            )}
+          </div>
+        </header>
 
-      <div className="bg-white/70 backdrop-blur-[20px] border border-white/60 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-[20px] p-4">
-        <TableFilter 
-          jenisList={jenisList} 
-          provinsis={provinsis} 
-          locations={locations}
-          operatorsByJenis={operatorsByJenis}
-          defaultJenis={resolvedParams.jenis || ""}
-          defaultProvinsi={resolvedParams.provinsi || ""}
-          defaultKota={resolvedParams.kota || ""}
-          defaultOperator={resolvedParams.operator || ""}
-          defaultSearch={resolvedParams.search || ""}
-        />
+        <div className="surface-card p-6 space-y-6">
+          <TableFilter 
+            jenisList={jenisList} 
+            provinsis={provinsis} 
+            locations={locations}
+            operatorsByJenis={operatorsByJenis}
+            defaultJenis={resolvedParams.jenis || ""}
+            defaultProvinsi={resolvedParams.provinsi || ""}
+            defaultKota={resolvedParams.kota || ""}
+            defaultOperator={resolvedParams.operator || ""}
+            defaultSearch={resolvedParams.search || ""}
+          />
 
-        <div className="overflow-x-auto rounded-lg border border-slate-200 relative scrollbar-thin scrollbar-thumb-slate-300">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-100/90 text-slate-900 font-black border-b border-slate-200 sticky top-0 z-10 shadow-sm backdrop-blur-md uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-2.5">No</th>
-                <th className="px-4 py-2.5">Nama Operator</th>
-                <th className="px-4 py-2.5">Jenis Komunikasi</th>
-                <th className="px-4 py-2.5">Kabupaten/Kota</th>
-                <th className="px-4 py-2.5">Koordinat</th>
-                {session?.user?.isAdmin && (
-                  <th className="px-4 py-2.5 text-center">Aksi</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {pengukuranList.length > 0 ? pengukuranList.map((item, index) => (
-                <tr key={item.id.toString()} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-4 py-2 text-slate-900 font-bold">{skip + index + 1}</td>
-                  <td className="px-4 py-2 font-black text-black">{item.stasiun_radio?.nama_penyelenggara || '-'}</td>
-                  <td className="px-4 py-2">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-tighter">
-                      {item.stasiun_radio?.jenis_komunikasi || 'Lainnya'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-slate-900">
-                    <div className="font-black text-[11px] leading-tight">{item.locations?.provinsi || '-'}</div>
-                    <div className="text-[10px] text-slate-600 font-black leading-tight uppercase opacity-80">{item.locations?.kota || '-'}</div>
-                  </td>
-                  <td className="px-4 py-2 text-slate-900 font-mono text-[10px] font-bold">
-                    {item.lokasi_pemancar?.latitude?.toString() || '-'}, {item.lokasi_pemancar?.longitude?.toString() || '-'}
-                  </td>
+          <div className="overflow-x-auto rounded-xl border border-border bg-background/50">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-muted text-muted-foreground font-bold border-b border-border uppercase tracking-widest text-[10px]">
+                <tr>
+                  <th className="px-4 py-3">No</th>
+                  <th className="px-4 py-3">Operator</th>
+                  <th className="px-4 py-3">Jenis</th>
+                  <th className="px-4 py-3">Wilayah</th>
+                  <th className="px-4 py-3">Koordinat</th>
                   {session?.user?.isAdmin && (
-                    <td className="px-4 py-2 text-center">
-                      <ActionButtons id={item.id.toString()} />
-                    </td>
+                    <th className="px-4 py-3 text-center">Aksi</th>
                   )}
                 </tr>
-              )) : (
-                <tr>
-                  <td colSpan={session?.user?.isAdmin ? 6 : 5} className="px-6 py-12 text-center text-slate-500">
-                    Tidak ada data ditemukan
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {pengukuranList.length > 0 ? pengukuranList.map((item, index) => (
+                  <tr key={item.id.toString()} className="hover:bg-accent/30 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground font-medium text-xs">{skip + index + 1}</td>
+                    <td className="px-4 py-3 font-bold text-foreground text-base tracking-tight">{item.stasiun_radio?.nama_penyelenggara || '-'}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary text-secondary-foreground border border-border uppercase tracking-tighter">
+                        {item.stasiun_radio?.jenis_komunikasi || 'Lainnya'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-xs text-foreground leading-tight">{item.locations?.provinsi || '-'}</div>
+                      <div className="text-[10px] text-muted-foreground font-medium leading-tight uppercase tracking-widest mt-0.5 opacity-60">{item.locations?.kota || '-'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-foreground font-mono text-[10px] opacity-40">
+                      {item.lokasi_pemancar?.latitude?.toString() || '-'}, {item.lokasi_pemancar?.longitude?.toString() || '-'}
+                    </td>
+                    {session?.user?.isAdmin && (
+                      <td className="px-4 py-3 text-center">
+                        <ActionButtons id={item.id.toString()} />
+                      </td>
+                    )}
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={session?.user?.isAdmin ? 6 : 5} className="px-6 py-12 text-center text-muted-foreground text-sm font-medium">
+                      Data tidak ditemukan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        {totalPages > 1 && (
-          <Pagination 
-            totalPages={totalPages} 
-            currentPage={page} 
-            params={resolvedParams} 
-          />
-        )}
-      </div>
+          {totalPages > 1 && (
+            <div className="pt-2 flex justify-center">
+              <Pagination 
+                totalPages={totalPages} 
+                currentPage={page} 
+                params={resolvedParams} 
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

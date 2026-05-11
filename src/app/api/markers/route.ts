@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { EXCLUDED_JENIS } from '@/lib/constants';
 import { rateLimit } from '@/lib/rate-limit';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.isAdmin || false;
+
   // Rate Limiting
   const ip = request.headers.get('x-forwarded-for') || 'anonymous';
   const { success } = rateLimit(ip, 50); // 50 requests per minute
@@ -85,15 +90,20 @@ export async function GET(request: Request) {
       }
     });
 
-    const formattedMarkers = viewportMarkers.map(m => ({
-      id: m.id.toString(),
-      lat: Number(m.lokasi_pemancar?.latitude),
-      lng: Number(m.lokasi_pemancar?.longitude),
-      nama: m.stasiun_radio?.nama_penyelenggara || 'Unknown',
-      jenis: m.stasiun_radio?.jenis_komunikasi || 'Lainnya',
-      kota: m.locations?.kota || 'Unknown',
-      provinsi: m.locations?.provinsi || 'Unknown'
-    }));
+    const formattedMarkers = viewportMarkers.map(m => {
+      const lat = Number(m.lokasi_pemancar?.latitude);
+      const lng = Number(m.lokasi_pemancar?.longitude);
+
+      return {
+        id: m.id.toString(),
+        lat: isAdmin ? lat : Math.round(lat * 1000) / 1000,
+        lng: isAdmin ? lng : Math.round(lng * 1000) / 1000,
+        nama: m.stasiun_radio?.nama_penyelenggara || 'Unknown',
+        jenis: m.stasiun_radio?.jenis_komunikasi || 'Lainnya',
+        kota: m.locations?.kota || 'Unknown',
+        provinsi: m.locations?.provinsi || 'Unknown'
+      };
+    });
 
     return NextResponse.json({
       markers: formattedMarkers,
