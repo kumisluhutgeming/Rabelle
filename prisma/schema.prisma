@@ -19,6 +19,8 @@ model locations {
   lokasi_pemancar lokasi_pemancar[]
   pengukuran      pengukuran[]
   stasiun_radio   stasiun_radio[]
+
+  @@index([provinsi], map: "locations_provinsi_index")
 }
 
 model lokasi_pemancar {
@@ -75,6 +77,8 @@ model stasiun_radio {
   locations          locations?   @relation(fields: [location_id], references: [id], onUpdate: Restrict, map: "stasiun_radio_location_id_foreign")
 
   @@index([location_id], map: "stasiun_radio_location_id_foreign")
+  @@index([nama_penyelenggara], map: "stasiun_radio_nama_penyelenggara_index")
+  @@index([jenis_komunikasi], map: "stasiun_radio_jenis_komunikasi_index")
 }
 
 model users {

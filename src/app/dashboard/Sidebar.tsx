@@ -67,14 +67,6 @@ export default function Sidebar({ session }: { session: any }) {
             <Table size={20} className="shrink-0" />
             {!isSidebarCollapsed && <span className="whitespace-nowrap">Tabel Data</span>}
           </Link>
-          <Link 
-            href="/dashboard/analytics" 
-            title="Analitik Tren"
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${pathname === "/dashboard/analytics" ? "bg-sky-50 text-sky-600" : "text-slate-600 hover:bg-black/5"}`}
-          >
-            <BarChart2 size={20} className="shrink-0" />
-            {!isSidebarCollapsed && <span className="whitespace-nowrap">Analitik Tren</span>}
-          </Link>
         </nav>
       </div>
 

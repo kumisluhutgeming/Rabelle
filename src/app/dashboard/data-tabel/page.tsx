@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function DataTabelPage({
   searchParams
 }: {
-  searchParams: Promise<{ jenis?: string; provinsi?: string; kota?: string; operator?: string; page?: string }>
+  searchParams: Promise<{ jenis?: string; provinsi?: string; kota?: string; operator?: string; page?: string; search?: string }>
 }) {
   const session = await getServerSession(authOptions);
   const resolvedParams = await searchParams;
@@ -46,6 +46,16 @@ export default async function DataTabelPage({
     where.locations = { ...where.locations, kota: resolvedParams.kota };
   }
 
+  if (resolvedParams.search) {
+    const search = resolvedParams.search;
+    where.OR = [
+      { stasiun_radio: { nama_penyelenggara: { contains: search } } },
+      { locations: { kota: { contains: search } } },
+      { locations: { provinsi: { contains: search } } },
+      { stasiun_radio: { jenis_komunikasi: { contains: search } } }
+    ];
+  }
+
   const [totalItems, pengukuranList, locations, provinsis, jenisList, operatorList] = await Promise.all([
     prisma.pengukuran.count({ where }),
     prisma.pengukuran.findMany({
@@ -59,9 +69,9 @@ export default async function DataTabelPage({
       }
     }),
     prisma.locations.findMany({
-      where: locWhere,
       select: { id: true, kota: true, provinsi: true },
-      distinct: ['kota']
+      distinct: ['kota'],
+      take: 500
     }),
     prisma.locations.findMany({
       select: { provinsi: true },
@@ -73,9 +83,9 @@ export default async function DataTabelPage({
       select: { jenis_komunikasi: true },
       distinct: ['jenis_komunikasi']
     }),
-    // Fetch (jenis, operator) pairs for cascading filter
     prisma.stasiun_radio.findMany({
       select: { nama_penyelenggara: true, jenis_komunikasi: true },
+      take: 1500,
       distinct: ['nama_penyelenggara', 'jenis_komunikasi']
     })
   ]);
@@ -125,9 +135,9 @@ export default async function DataTabelPage({
           defaultOperator={resolvedParams.operator || ""}
         />
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto overflow-y-auto max-h-[65vh] rounded-xl border border-slate-200 relative scrollbar-thin scrollbar-thumb-slate-300">
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+            <thead className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-10 shadow-sm backdrop-blur-md">
               <tr>
                 <th className="px-6 py-4">No</th>
                 <th className="px-6 py-4">Nama Operator</th>

@@ -13,37 +13,13 @@ export default async function MapsPage({
 }) {
   const resolvedParams = await searchParams;
 
-  // Build where clause
-  const where: any = {};
-  const locWhere: any = {};
-  
-  const radioWhere: any = {};
-  if (resolvedParams.jenis) {
-    radioWhere.jenis_komunikasi = resolvedParams.jenis;
-  }
-  if (resolvedParams.operator) {
-    radioWhere.nama_penyelenggara = resolvedParams.operator;
-  }
-
-  if (Object.keys(radioWhere).length > 0) {
-    where.stasiun_radio = radioWhere;
-  }
-
-  if (resolvedParams.provinsi) {
-    locWhere.provinsi = resolvedParams.provinsi;
-    where.locations = { ...where.locations, provinsi: resolvedParams.provinsi };
-  }
-
-  if (resolvedParams.kota) {
-    where.locations = { ...where.locations, kota: resolvedParams.kota };
-  }
-
-  // Fetch data
+  // Fetch metadata unconditionally. Since we have client-side cascading filters, 
+  // we just need the master lists once. This avoids redundant DB queries on every filter change.
   const [locations, provinsis, jenisList, allOperators] = await Promise.all([
     prisma.locations.findMany({
-      where: locWhere,
       select: { id: true, kota: true, provinsi: true, latitude: true, longitude: true },
-      distinct: ['kota']
+      distinct: ['kota'],
+      take: 500 // Get all cities
     }),
     prisma.locations.findMany({
       select: { provinsi: true },
@@ -57,6 +33,7 @@ export default async function MapsPage({
     }),
     prisma.stasiun_radio.findMany({
       select: { nama_penyelenggara: true, jenis_komunikasi: true },
+      take: 1500, 
       distinct: ['nama_penyelenggara', 'jenis_komunikasi']
     })
   ]);

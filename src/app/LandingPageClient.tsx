@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Map, Table as TableIcon, BarChart3, Radio, Tv } from "lucide-react";
+import { Map, Table as TableIcon, BarChart3, Radio, Tv, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 export default function LandingPageClient({ session, stats }: { session: any, stats: any }) {
   // Animation variants
@@ -47,9 +48,13 @@ export default function LandingPageClient({ session, stats }: { session: any, st
                 Dashboard
               </Link>
               {session ? (
-                <Link href="/dashboard" className="px-5 py-2.5 rounded-full bg-slate-800 text-white font-medium text-sm hover:bg-slate-700 transition-all shadow-sm">
-                  Masuk Dashboard
-                </Link>
+                <button 
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-bold text-sm hover:bg-rose-50 hover:text-rose-600 transition-all shadow-sm flex items-center gap-2"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
               ) : (
                 <Link href="/login" className="px-5 py-2.5 rounded-full border border-sky-200 bg-white text-sky-700 font-medium text-sm hover:bg-sky-50 transition-all duration-300 shadow-sm">
                   Login
