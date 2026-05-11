@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -22,14 +23,19 @@ import {
   Plus
 } from "lucide-react";
 
+import { useSession } from "next-auth/react";
+import { usePreferences } from "../PreferencesProvider";
+
 const TABS = [
-  { id: "general", label: "Umum", icon: User },
-  { id: "preferences", label: "Preferensi Peta", icon: MapIcon },
-  { id: "api", label: "Developer & API", icon: Key },
-  { id: "security", label: "Keamanan", icon: Shield },
+  { id: "general", label: "Umum", icon: User, restricted: true },
+  { id: "preferences", label: "Preferensi Peta", icon: MapIcon, restricted: false },
+  { id: "api", label: "Developer & API", icon: Key, restricted: true },
+  { id: "security", label: "Keamanan", icon: Shield, restricted: true },
 ];
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
+  const { mapTheme, setMapTheme, coordFormat, setCoordFormat, signalUnit, setSignalUnit } = usePreferences();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("general");
   const [isSaved, setIsSaved] = useState(false);
@@ -41,7 +47,11 @@ export default function SettingsPage() {
     }
   }, [searchParams]);
 
+  const currentTab = TABS.find(t => t.id === activeTab);
+  const isRestricted = currentTab?.restricted && !session;
+
   const handleSave = () => {
+    if (isRestricted) return;
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
@@ -61,7 +71,7 @@ export default function SettingsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm
+                w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm group
                 ${activeTab === tab.id 
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -70,7 +80,8 @@ export default function SettingsPage() {
             >
               <tab.icon size={18} />
               {tab.label}
-              {activeTab === tab.id && <ChevronRight size={14} className="ml-auto opacity-50" />}
+              {tab.restricted && !session && <Lock size={12} className="ml-auto opacity-40 group-hover:opacity-100" />}
+              {activeTab === tab.id && !isRestricted && <ChevronRight size={14} className="ml-auto opacity-50" />}
             </button>
           ))}
         </aside>
@@ -87,36 +98,57 @@ export default function SettingsPage() {
               className="bg-card border border-border shadow-xl rounded-[32px] overflow-hidden"
             >
               <div className="p-8 space-y-8">
-                {activeTab === "general" && <GeneralSettings onSave={handleSave} />}
-                {activeTab === "preferences" && <MapPreferences onSave={handleSave} />}
-                {activeTab === "api" && <ApiSettings onSave={handleSave} />}
-                {activeTab === "security" && <SecuritySettings onSave={handleSave} />}
+                {isRestricted ? (
+                  <div className="py-20 text-center space-y-6">
+                    <div className="w-20 h-20 rounded-3xl bg-secondary flex items-center justify-center mx-auto text-muted-foreground shadow-inner">
+                      <Lock size={32} />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-foreground">Login Diperlukan</h3>
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                        Anda perlu masuk ke akun untuk mengakses pengaturan {currentTab?.label.toLowerCase()}.
+                      </p>
+                    </div>
+                    <Link href="/login" className="inline-flex px-8 py-3 bg-primary text-primary-foreground rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
+                      Masuk Sekarang
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    {activeTab === "general" && <GeneralSettings onSave={handleSave} />}
+                    {activeTab === "preferences" && <MapPreferences onSave={handleSave} />}
+                    {activeTab === "api" && <ApiSettings onSave={handleSave} />}
+                    {activeTab === "security" && <SecuritySettings onSave={handleSave} />}
+                  </>
+                )}
               </div>
 
               {/* Action Bar */}
-              <div className="px-8 py-5 bg-secondary/20 border-t border-border flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AnimatePresence>
-                    {isSaved && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="flex items-center gap-2 text-emerald-500 font-bold text-xs"
-                      >
-                        <CheckCircle2 size={14} />
-                        Perubahan disimpan
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+              {!isRestricted && (
+                <div className="px-8 py-5 bg-secondary/20 border-t border-border flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AnimatePresence>
+                      {isSaved && (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          className="flex items-center gap-2 text-emerald-500 font-bold text-xs"
+                        >
+                          <CheckCircle2 size={14} />
+                          Perubahan disimpan
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <button 
+                    onClick={handleSave}
+                    className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
+                  >
+                    Simpan Perubahan
+                  </button>
                 </div>
-                <button 
-                  onClick={handleSave}
-                  className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
-                >
-                  Simpan Perubahan
-                </button>
-              </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </main>
@@ -160,6 +192,8 @@ function GeneralSettings({ onSave }: { onSave: () => void }) {
 }
 
 function MapPreferences({ onSave }: { onSave: () => void }) {
+  const { mapTheme, setMapTheme, coordFormat, setCoordFormat, signalUnit, setSignalUnit } = usePreferences();
+
   return (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -167,11 +201,28 @@ function MapPreferences({ onSave }: { onSave: () => void }) {
           <Globe size={18} className="text-primary" />
           Tampilan Peta
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {["Vibrant", "Positron", "Dark"].map(style => (
-            <div key={style} className="border-2 border-primary bg-secondary/30 rounded-2xl p-4 cursor-pointer hover:border-primary/50 transition-all text-center">
-              <div className="w-full aspect-video bg-zinc-300 rounded-lg mb-3 shadow-inner" />
-              <span className="text-xs font-bold">{style}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { id: "colorful", img: "/previews/colorful.png", label: "Colorful" },
+            { id: "voyager", img: "/previews/voyager.png", label: "Voyager" },
+            { id: "dark", img: "/previews/dark.png", label: "Dark" },
+            { id: "satellite", img: "/previews/satellite.png", label: "Satellite" }
+          ].map(theme => (
+            <div 
+              key={theme.id} 
+              onClick={() => setMapTheme(theme.id as any)}
+              className={`
+                border-2 rounded-2xl p-2 cursor-pointer transition-all overflow-hidden group
+                ${mapTheme === theme.id ? "border-primary bg-primary/5" : "border-transparent bg-secondary/30 hover:border-border"}
+              `}
+            >
+              <div className="w-full aspect-video rounded-xl mb-3 shadow-sm overflow-hidden border border-border">
+                <img src={theme.img} alt={theme.id} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              </div>
+              <div className="flex items-center justify-center gap-2 pb-1">
+                <div className={`w-2 h-2 rounded-full ${mapTheme === theme.id ? "bg-primary animate-pulse" : "bg-muted"}`} />
+                <span className={`text-[11px] font-black uppercase tracking-widest ${mapTheme === theme.id ? "text-primary" : "text-muted-foreground"}`}>{theme.label}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -185,16 +236,36 @@ function MapPreferences({ onSave }: { onSave: () => void }) {
         <div className="flex flex-wrap gap-10">
           <div className="space-y-3">
              <label className="text-xs font-black text-muted-foreground uppercase tracking-widest">Format Koordinat</label>
-             <div className="flex gap-2">
-                <button className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold">Decimal</button>
-                <button className="px-4 py-2 bg-secondary text-muted-foreground rounded-xl text-xs font-bold hover:bg-muted transition-all">DMS</button>
+             <div className="flex gap-2 p-1 bg-secondary/50 rounded-2xl w-fit">
+                <button 
+                  onClick={() => setCoordFormat("decimal")}
+                  className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${coordFormat === "decimal" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Decimal
+                </button>
+                <button 
+                  onClick={() => setCoordFormat("dms")}
+                  className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${coordFormat === "dms" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  DMS
+                </button>
              </div>
           </div>
           <div className="space-y-3">
              <label className="text-xs font-black text-muted-foreground uppercase tracking-widest">Unit Sinyal</label>
-             <div className="flex gap-2">
-                <button className="px-4 py-2 bg-secondary text-muted-foreground rounded-xl text-xs font-bold hover:bg-muted transition-all">Persentase (%)</button>
-                <button className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold">dBm</button>
+             <div className="flex gap-2 p-1 bg-secondary/50 rounded-2xl w-fit">
+                <button 
+                  onClick={() => setSignalUnit("percent")}
+                  className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${signalUnit === "percent" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Persentase (%)
+                </button>
+                <button 
+                  onClick={() => setSignalUnit("dbm")}
+                  className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${signalUnit === "dbm" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  dBm
+                </button>
              </div>
           </div>
         </div>
