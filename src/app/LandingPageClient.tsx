@@ -237,7 +237,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
               <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Titik Infrastruktur</p>
             </div>
             <div className="space-y-2">
-              <p className="text-5xl lg:text-7xl font-black tracking-tighter">38</p>
+              <p className="text-5xl lg:text-7xl font-black tracking-tighter">7</p>
               <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Provinsi Tercover</p>
             </div>
             <div className="space-y-2">
