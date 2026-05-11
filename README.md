@@ -1,43 +1,100 @@
-Aplikasi Rabelle adalah aplikasi berbasis web dengan fungsi utama mempetakan menara komunikasi yang berada di pulau Jawa dan bali.
+# 📡 Rabelle: Geographic Intelligence Platform
 
-cara memulai aplikasi;
-1. Pastikan apache dan mysql sudah menyala di xampp
-2. Jalankan file start_rabelle.bat
-3. buka browser anda dan pergi ke http://localhost:3000
+**Rabelle** adalah platform analisis dan pemetaan infrastruktur telekomunikasi (Menara BTS, TV, dan Radio) untuk wilayah Pulau Jawa dan Bali. Aplikasi ini dirancang untuk memberikan visualisasi data yang presisi, analisis distribusi operator, serta pemantauan cakupan sinyal secara interaktif.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
 
-## Getting Started
+## 🚀 Fitur Utama
+- **Interactive WebGL Map**: Visualisasi ribuan titik infrastruktur dengan performa tinggi menggunakan MapLibre GL.
+- **Smart Clustering**: Pengelompokan data berdasarkan Provinsi dan Kota/Kabupaten secara dinamis.
+- **Signal Coverage Visualization**: Simulasi gradasi jangkauan sinyal (Kuat, Sedang, Lemah).
+- **Advanced Analytics Dashboard**: Grafik distribusi operator dan wilayah menggunakan Chart.js.
+- **Smart Filtering**: Filter pencarian cerdas dengan fitur *autocomplete* untuk wilayah dan kategori.
+- **Secure Authentication**: Sistem login aman menggunakan NextAuth.js.
 
-First, run the development server:
+---
 
+## 🛠️ Tech Stack
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Database**: MySQL / MariaDB
+- **Map Engine**: MapLibre GL / React Map GL
+- **Styling**: Vanilla CSS & Tailwind CSS
+- **Animations**: Framer Motion
+- **Analytics**: Chart.js & React-Chartjs-2
+
+---
+
+## 📋 Prasyarat
+Sebelum memulai, pastikan Anda telah menginstal:
+- [Node.js](https://nodejs.org/) (Versi 18 atau lebih baru)
+- [XAMPP](https://www.apachefriends.org/) atau server MySQL lokal lainnya
+- Browser modern (Chrome/Edge/Safari)
+
+---
+
+## ⚙️ Langkah Instalasi & Setup
+
+### 1. Clone Repositori
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/username/rabelle.git
+cd rabelle
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Instal Dependensi
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Konfigurasi Environment
+Buat file `.env` di root direktori dan salin isi dari `.env.example`:
+```bash
+cp .env.example .env
+```
+Sesuaikan nilai `DATABASE_URL` dengan kredensial database MySQL Anda:
+```env
+DATABASE_URL="mysql://root:@127.0.0.1:3306/kominfo"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Setup Database (Prisma)
+Pastikan MySQL Anda aktif (via XAMPP), lalu jalankan perintah berikut untuk mensinkronisasi schema database:
+```bash
+npx prisma db push
+```
 
-## Learn More
+### 5. Jalankan Aplikasi
+Anda dapat menjalankan aplikasi menggunakan salah satu cara berikut:
 
-To learn more about Next.js, take a look at the following resources:
+**Opsi A (Via Terminal):**
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Opsi B (Via Shortcut Windows):**
+Jalankan file `start_rabelle.bat` dengan klik dua kali.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🖥️ Cara Penggunaan
+1. Buka browser dan akses [http://localhost:3000](http://localhost:3000).
+2. Gunakan **Landing Page** untuk ringkasan cepat.
+3. Masuk ke **Dashboard** untuk melihat analisis statistik.
+4. Gunakan menu **Peta Interaktif** untuk eksplorasi geografis.
+5. Gunakan **Tabel Data** untuk melihat detail teknis setiap infrastruktur.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📁 Struktur Proyek
+- `/src/app`: Logika halaman dan routing (Next.js App Router).
+- `/src/components`: Komponen UI yang dapat digunakan kembali.
+- `/prisma`: Schema database dan konfigurasi ORM.
+- `/public`: Aset statis (Logo, Gambar).
+- `/scripts`: Skrip bantuan untuk manipulasi data database.
+
+---
+
+## 📄 Lisensi
+Proyek ini dikembangkan untuk kebutuhan internal **Rabelle Intelligence**. Hak cipta © 2026.
+
+---
+*Developed with ❤️ for Better Connectivity.*
