@@ -162,9 +162,9 @@ export default async function DataTabelPage({
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-bold text-xs text-foreground leading-tight">{item.locations?.provinsi || '-'}</div>
-                      <div className="text-[10px] text-muted-foreground font-medium leading-tight uppercase tracking-widest mt-0.5 opacity-60">{item.locations?.kota || '-'}</div>
+                      <div className="text-[10px] text-muted-foreground font-bold leading-tight uppercase tracking-widest mt-0.5">{item.locations?.kota || '-'}</div>
                     </td>
-                    <td className="px-4 py-3 text-foreground font-mono text-[10px] opacity-40">
+                    <td className="px-4 py-3 text-foreground/80 font-mono text-[10px]">
                       {item.lokasi_pemancar?.latitude?.toString() || '-'}, {item.lokasi_pemancar?.longitude?.toString() || '-'}
                     </td>
                     {session?.user?.isAdmin && (
