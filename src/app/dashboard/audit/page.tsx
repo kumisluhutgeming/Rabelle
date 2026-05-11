@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { History, ShieldAlert, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -20,59 +22,65 @@ export default async function AuditLogPage() {
   });
 
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in-up">
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-[#1d1d1f] tracking-tight">Log Aktivitas Audit</h1>
-          <p className="text-gray-500 mt-1">Daftar lengkap riwayat aktivitas dan mutasi data yang dilakukan oleh Admin</p>
+    <div className="space-y-8 pb-12">
+      {/* Page Header */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-[0.2em]">
+          <History size={14} />
+          Log Keamanan
         </div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Riwayat Audit Aktivitas</h1>
+        <p className="text-muted-foreground font-medium">Pemantauan mutasi data dan aktivitas administratif secara real-time.</p>
+      </div>
 
-        {/* Audit Log Table */}
-        <div className="bg-white/70 backdrop-blur-[20px] border border-white/60 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-[24px] p-6">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-100">
-                  <th className="px-5 py-3 rounded-tl-xl">ID</th>
-                  <th className="px-5 py-3">Aksi</th>
-                  <th className="px-5 py-3">Keterangan</th>
-                  <th className="px-5 py-3 rounded-tr-xl">Waktu</th>
+      <div className="surface-card p-6">
+        <div className="overflow-x-auto rounded-xl border border-border bg-background/50">
+          <table className="w-full text-sm text-left border-collapse">
+            <thead className="bg-muted text-muted-foreground font-bold border-b border-border uppercase tracking-widest text-[10px]">
+              <tr>
+                <th className="px-5 py-4">ID</th>
+                <th className="px-5 py-4">Aksi</th>
+                <th className="px-5 py-4">Keterangan</th>
+                <th className="px-5 py-4">Waktu</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {logs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-20 text-center text-muted-foreground font-medium">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
+                        <ShieldAlert size={24} />
+                      </div>
+                      <p>Belum ada aktivitas tercatat di sistem.</p>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-sm">
-                {logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-5 py-10 text-center text-slate-400">
-                      belum ada aktivitas disini, ayo audit sesuatu
+              ) : (
+                logs.map((log) => (
+                  <tr key={log.id.toString()} className="hover:bg-accent/30 transition-colors group">
+                    <td className="px-5 py-4 font-mono text-[10px] text-muted-foreground">
+                      #{log.id.toString()}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider border border-primary/20">
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-foreground font-medium leading-relaxed max-w-[500px]">
+                      {log.details}
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground text-[10px] font-medium whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleString("id-ID", {
+                        dateStyle: "medium",
+                        timeStyle: "short"
+                      })}
                     </td>
                   </tr>
-                ) : (
-                  logs.map((log) => (
-                    <tr key={log.id.toString()} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-5 py-3.5 font-medium text-slate-400">
-                        #{log.id.toString()}
-                      </td>
-                      <td className="px-5 py-3.5 font-semibold text-slate-800">
-                        <span className="bg-sky-50 text-sky-600 px-2.5 py-1 rounded-lg text-xs">
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-slate-600 max-w-[400px]">
-                        {log.details}
-                      </td>
-                      <td className="px-5 py-3.5 text-slate-400 text-xs">
-                        {new Date(log.created_at).toLocaleString("id-ID", {
-                          dateStyle: "medium",
-                          timeStyle: "short"
-                        })}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

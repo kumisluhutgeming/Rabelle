@@ -154,8 +154,8 @@ export default function FloatingFilter({
     router.push(`${pathname}?${current.toString()}`);
   };
 
-  // Improved positioning: closer to sidebar but not covered
-  const leftOffset = isSidebarCollapsed ? "left-[90px]" : "left-[298px]";
+  // Improved positioning: tight with the sidebar
+  const leftOffset = isSidebarCollapsed ? "left-[80px]" : "left-[272px]";
 
   return (
     <>

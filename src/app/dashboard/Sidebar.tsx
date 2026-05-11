@@ -35,15 +35,9 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: "Analisis",
-    items: [
-      { label: "Analitik Jaringan", href: "/dashboard/analytics", icon: BarChart2 },
-      { label: "Riwayat Audit", href: "/dashboard/audit", icon: History },
-    ]
-  },
-  {
     label: "Sistem",
     items: [
+      { label: "Riwayat Audit", href: "/dashboard/audit", icon: History, adminOnly: true },
       { label: "Pengaturan", href: "/dashboard/settings", icon: Settings },
       { label: "Hak Akses", href: "/dashboard/permissions", icon: ShieldCheck, adminOnly: true },
     ]
@@ -92,14 +86,14 @@ export default function Sidebar({ session }: { session: any }) {
 
       <aside 
         className={`
-          bg-card border-r border-border ${positionClass} flex flex-col z-50 transition-all duration-300 ease-in-out 
+          bg-card border-r border-border flex flex-col z-50 transition-all duration-300 ease-in-out 
           ${widthClass} ${opacityClass} !rounded-r-3xl shadow-sm
           ${isMobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
-          fixed lg:sticky h-screen
+          ${isMapPage ? "fixed left-0 top-0 bottom-0" : "sticky top-0"} h-screen
         `}
       >
         <div className={`flex items-center justify-between ${isSidebarCollapsed ? "p-3" : "p-6"}`}>
-          <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap group">
+          <Link href={session ? "/dashboard" : "/"} className="flex items-center gap-3 overflow-hidden whitespace-nowrap group">
             <div className="w-10 h-10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               {theme === "dark" ? (
                 <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain" />
@@ -111,12 +105,22 @@ export default function Sidebar({ session }: { session: any }) {
               <span className="font-bold text-lg tracking-tight text-foreground">Rabelle</span>
             )}
           </Link>
-          <button 
-            className="lg:hidden text-muted-foreground"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <X size={20} />
-          </button>
+          
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground transition-all"
+              title={isSidebarCollapsed ? "Expand" : "Collapse"}
+            >
+              {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </button>
+            <button 
+              className="lg:hidden text-muted-foreground p-1"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <nav className="flex-grow py-4 px-3 overflow-y-auto space-y-6">
@@ -161,17 +165,11 @@ export default function Sidebar({ session }: { session: any }) {
           ))}
         </nav>
 
-        <div className={`p-4 border-t border-border space-y-2`}>
-          <LogoutButton isCollapsed={isSidebarCollapsed} />
-          
-          <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden lg:flex w-full items-center justify-center p-2 rounded-xl hover:bg-muted text-muted-foreground transition-all"
-            title={isSidebarCollapsed ? "Expand" : "Collapse"}
-          >
-            {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-        </div>
+        {session && (
+          <div className={`p-4 border-t border-border`}>
+            <LogoutButton isCollapsed={isSidebarCollapsed} />
+          </div>
+        )}
       </aside>
     </>
   );

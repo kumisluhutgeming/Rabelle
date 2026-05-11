@@ -23,8 +23,8 @@ export default async function DashboardPage() {
       take: 5
     }),
     prisma.locations.findMany({
-      include: { _count: { select: { pengukurans: true } } },
-      orderBy: { pengukurans: { _count: 'desc' } },
+      include: { _count: { select: { pengukuran: true } } },
+      orderBy: { pengukuran: { _count: 'desc' } },
       take: 10
     })
   ]);
@@ -39,8 +39,8 @@ export default async function DashboardPage() {
       count: op._count.id
     })),
     provinsi: topProvinsisRaw.map(p => ({
-      name: p.provinsi,
-      count: p._count.pengukurans
+      name: p.kota,
+      count: p._count.pengukuran
     }))
   };
 
