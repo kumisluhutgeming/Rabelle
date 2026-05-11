@@ -59,10 +59,23 @@ const INITIAL_NOTIFS: Notification[] = [
   }
 ];
 
+import { useSession } from "next-auth/react";
+
 export default function NotificationsPanel() {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const isAdmin = session?.user?.isAdmin || session?.user?.role === "admin";
+  
   const [notifications, setNotifications] = useState(INITIAL_NOTIFS);
-  const unreadCount = notifications.filter(n => !n.read).length;
+  
+  // Filter notifications for guest/viewer users
+  const visibleNotifications = notifications.filter(n => {
+    if (isAdmin) return true;
+    // Hide administrative or system alerts from non-admins
+    return n.type !== "system" && !n.title.toLowerCase().includes("administratif") && !n.title.toLowerCase().includes("audit");
+  });
+
+  const unreadCount = visibleNotifications.filter(n => !n.read).length;
 
   const markAllRead = () => {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
@@ -108,7 +121,7 @@ export default function NotificationsPanel() {
 
               {/* Feed */}
               <div className="flex-1 overflow-y-auto custom-scrollbar bg-card/50">
-                {notifications.length === 0 ? (
+                {visibleNotifications.length === 0 ? (
                   <div className="py-20 text-center">
                     <Zap size={32} className="text-muted-foreground/30 mx-auto mb-4" />
                     <p className="text-sm font-bold text-foreground">Semua bersih!</p>
@@ -116,7 +129,7 @@ export default function NotificationsPanel() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border/50">
-                    {notifications.map((n) => (
+                    {visibleNotifications.map((n) => (
                       <div 
                         key={n.id} 
                         className={`p-4 transition-colors relative group ${n.read ? "bg-transparent" : "bg-primary/5"}`}

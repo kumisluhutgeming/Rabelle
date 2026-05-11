@@ -111,13 +111,24 @@ export default function UserProfileDropdown({ session }: { session: any }) {
                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sistem</span>
                    <ThemeToggle />
                 </div>
-                <button 
-                  onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-all"
-                >
-                  <LogOut size={16} />
-                  Keluar dari Akun
-                </button>
+                {session ? (
+                  <button 
+                    onClick={() => signOut({ redirect: false })}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-all"
+                  >
+                    <LogOut size={16} />
+                    Keluar dari Akun
+                  </button>
+                ) : (
+                  <Link 
+                    href="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/10 transition-all"
+                  >
+                    <LogOut size={16} />
+                    Masuk ke Akun
+                  </Link>
+                )}
               </div>
             </motion.div>
           </>

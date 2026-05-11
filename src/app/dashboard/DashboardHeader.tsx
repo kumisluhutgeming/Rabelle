@@ -9,6 +9,8 @@ import { useIdle } from "./IdleProvider";
 import { useState, useEffect } from "react";
 import { ChevronRight, Layout } from "lucide-react";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 export default function DashboardHeader({ session }: { session: any }) {
   const { isMapPage } = useIdle();
   const pathname = usePathname();
@@ -59,6 +61,7 @@ export default function DashboardHeader({ session }: { session: any }) {
         <div className="w-px h-4 bg-border hidden md:block" />
 
         <div className="flex items-center gap-1 lg:gap-2">
+          <ThemeToggle />
           <NotificationsPanel />
         </div>
 
