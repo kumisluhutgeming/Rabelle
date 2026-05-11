@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Map, BarChart3, Radio, Tv, LogOut, ChevronRight, Globe, Shield, Zap, Search, Layout, Database, CheckCircle2, ArrowRight } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/ThemeProvider";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 

@@ -5,116 +5,174 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useIdle } from "./IdleProvider";
 import LogoutButton from "./LogoutButton";
-import { useTheme } from "next-themes";
-import { LayoutDashboard, Map as MapIcon, Table, Settings, Home, ChevronLeft, ChevronRight, BarChart2, ClipboardList } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
+import { 
+  LayoutDashboard, 
+  Map as MapIcon, 
+  Table, 
+  Settings, 
+  Home, 
+  ChevronLeft, 
+  ChevronRight, 
+  BarChart2, 
+  ClipboardList, 
+  Search, 
+  History, 
+  PlusCircle, 
+  Bell, 
+  ShieldCheck,
+  Menu,
+  X
+} from "lucide-react";
+
+const NAV_GROUPS = [
+  {
+    label: "Utama",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Peta Interaktif", href: "/dashboard/maps", icon: MapIcon },
+      { label: "Tabel Data", href: "/dashboard/data-tabel", icon: Table },
+    ]
+  },
+  {
+    label: "Analisis",
+    items: [
+      { label: "Analitik Jaringan", href: "/dashboard/analytics", icon: BarChart2 },
+      { label: "Riwayat Audit", href: "/dashboard/audit", icon: History },
+    ]
+  },
+  {
+    label: "Sistem",
+    items: [
+      { label: "Pengaturan", href: "/dashboard/settings", icon: Settings },
+      { label: "Hak Akses", href: "/dashboard/permissions", icon: ShieldCheck, adminOnly: true },
+    ]
+  }
+];
 
 export default function Sidebar({ session }: { session: any }) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
   const pathname = usePathname();
-  const { isUiVisible, isMapPage, setHoverState, isSidebarCollapsed, setIsSidebarCollapsed } = useIdle();
+  const { isUiVisible, isMapPage, isSidebarCollapsed, setIsSidebarCollapsed } = useIdle();
+  
+  const isAdmin = session?.user?.isAdmin || session?.user?.role === "admin";
 
   const opacityClass = isMapPage && !isUiVisible ? "opacity-0 pointer-events-none" : "opacity-100";
-  const widthClass = isSidebarCollapsed ? "w-20" : "w-72";
+  const widthClass = isSidebarCollapsed ? "w-16" : "w-64";
   const positionClass = isMapPage ? "fixed left-0 top-0 bottom-0" : "sticky top-0";
 
+  if (!mounted) return null;
+
   return (
-    <aside 
-      className={`bg-card border-r border-border ${positionClass} flex flex-col z-50 transition-all duration-300 ease-in-out ${widthClass} ${opacityClass} !rounded-r-2xl shadow-sm`}
-    >
-      <div className={`${isSidebarCollapsed ? "p-4" : "p-8"} flex items-center justify-between`}>
-        {!isSidebarCollapsed ? (
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Toggle Button */}
+      {!isMobileMenuOpen && (
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="fixed bottom-6 right-6 w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg z-[70] flex items-center justify-center lg:hidden"
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
+      <aside 
+        className={`
+          bg-card border-r border-border ${positionClass} flex flex-col z-50 transition-all duration-300 ease-in-out 
+          ${widthClass} ${opacityClass} !rounded-r-3xl shadow-sm
+          ${isMobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
+          fixed lg:sticky h-screen
+        `}
+      >
+        <div className={`flex items-center justify-between ${isSidebarCollapsed ? "p-3" : "p-6"}`}>
           <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap group">
-            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform">
-              {mounted && theme === "dark" ? (
-                <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-all" />
+            <div className="w-10 h-10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              {theme === "dark" ? (
+                <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain" />
               ) : (
                 <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
               )}
             </div>
-            <span className="font-semibold text-lg tracking-tight text-foreground">Rabelle</span>
+            {!isSidebarCollapsed && (
+              <span className="font-bold text-lg tracking-tight text-foreground">Rabelle</span>
+            )}
           </Link>
-        ) : (
-          <Link href="/" className="flex items-center justify-center w-full">
-            <div className="w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform">
-              {mounted && theme === "dark" ? (
-                <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain opacity-90 transition-all" />
-              ) : (
-                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain grayscale opacity-80 transition-all" />
-              )}
-            </div>
-          </Link>
-        )}
-      </div>
-
-      {/* Collapse Toggle */}
-      <button 
-        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        className="absolute -right-3 top-20 bg-card border border-border rounded-full p-1.5 shadow-sm hover:bg-muted transition-all z-50 text-muted-foreground hover:text-foreground"
-      >
-        {isSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-      </button>
-
-      <div className="flex-1 overflow-y-auto py-2 px-3 space-y-8">
-        <div>
-          {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 opacity-50">Utama</p>}
-          <nav className="flex flex-col gap-1">
-            <Link 
-              href="/dashboard" 
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
-            >
-              <LayoutDashboard size={18} className="shrink-0" />
-              {!isSidebarCollapsed && <span>Ringkasan</span>}
-            </Link>
-            <Link 
-              href="/dashboard/maps" 
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/maps" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
-            >
-              <MapIcon size={18} className="shrink-0" />
-              {!isSidebarCollapsed && <span>Peta Persebaran</span>}
-            </Link>
-            <Link 
-              href="/dashboard/data-tabel" 
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/data-tabel" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
-            >
-              <Table size={18} className="shrink-0" />
-              {!isSidebarCollapsed && <span>Katalog Data</span>}
-            </Link>
-          </nav>
+          <button 
+            className="lg:hidden text-muted-foreground"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        {session?.user?.isAdmin && (
-          <div>
-            {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 opacity-50">Administrasi</p>}
-            <nav className="flex flex-col gap-1">
-              <Link 
-                href="/dashboard/edit-data"
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/edit-data" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
-              >
-                <Settings size={18} className="shrink-0" />
-                {!isSidebarCollapsed && <span>Konfigurasi Data</span>}
-              </Link>
-              <Link 
-                href="/dashboard/audit"
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all font-medium text-sm ${pathname === "/dashboard/audit" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
-              >
-                <ClipboardList size={18} className="shrink-0" />
-                {!isSidebarCollapsed && <span>Log Aktivitas</span>}
-              </Link>
-            </nav>
-          </div>
-        )}
-      </div>
+        <nav className="flex-grow py-4 px-3 overflow-y-auto space-y-6">
+          {NAV_GROUPS.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-1">
+              {!isSidebarCollapsed && (
+                <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 opacity-50">
+                  {group.label}
+                </h3>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item, itemIdx) => {
+                  if (item.adminOnly && !isAdmin) return null;
+                  const isActive = pathname === item.href;
+                  
+                  return (
+                    <Link
+                      key={itemIdx}
+                      href={item.href}
+                      className={`
+                        flex items-center gap-3 px-3 py-2 rounded-xl transition-all group relative
+                        ${isActive 
+                          ? "bg-secondary text-primary font-bold shadow-sm" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        }
+                      `}
+                      title={isSidebarCollapsed ? item.label : ""}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <item.icon size={18} className={`${isActive ? "text-primary" : "group-hover:text-foreground"} transition-colors`} />
+                      {!isSidebarCollapsed && (
+                        <span className="text-sm tracking-tight">{item.label}</span>
+                      )}
+                      {isActive && !isSidebarCollapsed && (
+                        <div className="absolute left-0 w-1 h-4 bg-primary rounded-r-full" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
 
-      <div className="p-4">
-        {session ? (
+        <div className={`p-4 border-t border-border space-y-2`}>
           <LogoutButton isCollapsed={isSidebarCollapsed} />
-        ) : null}
-      </div>
-    </aside>
+          
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="hidden lg:flex w-full items-center justify-center p-2 rounded-xl hover:bg-muted text-muted-foreground transition-all"
+            title={isSidebarCollapsed ? "Expand" : "Collapse"}
+          >
+            {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
