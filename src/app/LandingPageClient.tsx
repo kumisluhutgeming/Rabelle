@@ -90,7 +90,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
 
             <motion.h1 variants={fadeIn} className="text-5xl lg:text-8xl font-black tracking-tight leading-[0.95] text-foreground">
               Petakan Infrastruktur <br />
-              Digital Nasional <span className="text-muted-foreground opacity-30">Secara Presisi.</span>
+              Digital Nasional <span className="text-primary/80">Secara Presisi.</span>
             </motion.h1>
             
             <motion.p variants={fadeIn} className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
