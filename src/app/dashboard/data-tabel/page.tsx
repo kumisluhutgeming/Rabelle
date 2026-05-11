@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { EXCLUDED_JENIS } from "@/lib/constants";
 import ExportButton from "./ExportButton";
 import Pagination from "./Pagination";
+import CoordinateCell from "./CoordinateCell";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,6 @@ export default async function DataTabelPage({
 
   // Build where clause
   const where: any = {};
-  const locWhere: any = {};
   
   const radioWhere: any = {};
   if (resolvedParams.jenis) {
@@ -39,7 +39,6 @@ export default async function DataTabelPage({
   }
 
   if (resolvedParams.provinsi) {
-    locWhere.provinsi = resolvedParams.provinsi;
     where.locations = { ...where.locations, provinsi: resolvedParams.provinsi };
   }
 
@@ -164,8 +163,15 @@ export default async function DataTabelPage({
                       <div className="font-bold text-xs text-foreground leading-tight">{item.locations?.provinsi || '-'}</div>
                       <div className="text-[10px] text-muted-foreground font-bold leading-tight uppercase tracking-widest mt-0.5">{item.locations?.kota || '-'}</div>
                     </td>
-                    <td className="px-4 py-3 text-foreground/80 font-mono text-[10px]">
-                      {item.lokasi_pemancar?.latitude?.toString() || '-'}, {item.lokasi_pemancar?.longitude?.toString() || '-'}
+                    <td className="px-4 py-3">
+                      {item.lokasi_pemancar?.latitude && item.lokasi_pemancar?.longitude ? (
+                        <CoordinateCell 
+                          lat={Number(item.lokasi_pemancar.latitude)} 
+                          lng={Number(item.lokasi_pemancar.longitude)} 
+                        />
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </td>
                     {session?.user?.isAdmin && (
                       <td className="px-4 py-3 text-center">
