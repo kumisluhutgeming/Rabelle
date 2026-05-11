@@ -89,20 +89,20 @@ export default function TableFilter({
   };
 
   return (
-    <div className="flex flex-col gap-4 mb-6">
+    <div className="flex flex-col gap-2 mb-3">
       {/* Global Search Bar */}
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Search size={18} className="text-slate-400" />
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search size={14} className="text-slate-400" />
         </div>
         <input 
           type="text" 
-          placeholder="Pencarian Bebas: Cari ID, Nama Tower, Alamat, atau Kota..." 
+          placeholder="Cari ID, Operator, Alamat, atau Kota..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearchCommit()}
           onBlur={handleSearchCommit}
-          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all shadow-sm font-medium"
+          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all shadow-sm font-bold"
         />
         {searchTerm && (
           <button 
@@ -115,14 +115,14 @@ export default function TableFilter({
       </div>
 
       {/* Dropdown Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-2">
         <div className="flex-1">
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter Jenis Komunikasi</label>
+          <label className="block text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-1">Jenis Komunikasi</label>
           <select 
           name="jenis" 
           value={defaultJenis} 
           onChange={handleFilterChange}
-          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
+          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2 py-1 text-[10px] font-black focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
         >
           <option value="">Semua Jenis</option>
           {jenisList
@@ -139,17 +139,14 @@ export default function TableFilter({
         </select>
       </div>
       <div className="flex-1">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-          Filter Operator
-          {defaultJenis && (
-            <span className="ml-1 text-[#007AFF] normal-case font-normal">({filteredOperators.length})</span>
-          )}
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-1">
+          Operator
         </label>
         <select 
           name="operator" 
           value={defaultOperator} 
           onChange={handleFilterChange}
-          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
+          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2 py-1 text-[10px] font-black focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
         >
           <option value="">Semua Operator</option>
           {filteredOperators.filter(Boolean).map((op, i) => (
@@ -158,12 +155,12 @@ export default function TableFilter({
         </select>
       </div>
       <div className="flex-1">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter Provinsi</label>
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-1">Provinsi</label>
         <select 
           name="provinsi" 
           value={defaultProvinsi} 
           onChange={handleFilterChange}
-          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
+          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2 py-1 text-[10px] font-black focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
         >
           <option value="">Semua Provinsi</option>
           {provinsis.filter(p => p.provinsi).map((prov, i) => (
@@ -172,12 +169,12 @@ export default function TableFilter({
         </select>
       </div>
       <div className="flex-1">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter Kabupaten/Kota</label>
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-1">Kabupaten/Kota</label>
         <select 
           name="kota" 
           value={defaultKota} 
           onChange={handleFilterChange}
-          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
+          className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2 py-1 text-[10px] font-black focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] transition-all cursor-pointer"
         >
           <option value="">Semua Wilayah</option>
           {filteredCities.map((loc) => (

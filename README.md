@@ -53,7 +53,7 @@ cp .env.example .env
 ```
 Sesuaikan nilai `DATABASE_URL` dengan kredensial database MySQL Anda:
 ```env
-DATABASE_URL="mysql://root:@127.0.0.1:3306/kominfo"
+DATABASE_URL="mysql://root:@127.0.0.1:3306/rabelle"
 ```
 
 ### 4. Setup Database (Prisma)

@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { EXCLUDED_JENIS } from "@/lib/constants";
 import ExportButton from "./ExportButton";
+import Pagination from "./Pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -103,12 +104,12 @@ export default async function DataTabelPage({
   const totalPages = Math.ceil(totalItems / limit);
 
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in-up">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div className="p-4">
+      <div className="max-w-6xl mx-auto space-y-4 animate-fade-in-up">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
         <div>
-          <h1 className="text-3xl font-bold text-[#1d1d1f] tracking-tight">Data Infrastruktur</h1>
-          <p className="text-gray-500 mt-1">Daftar lengkap menara komunikasi dan stasiun radio</p>
+          <h1 className="text-xl font-bold text-[#1d1d1f] tracking-tight">Data Infrastruktur</h1>
+          <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-widest font-bold">Daftar lengkap menara komunikasi dan stasiun radio</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -123,7 +124,7 @@ export default async function DataTabelPage({
         </div>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-[20px] border border-white/60 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-[24px] p-6">
+      <div className="bg-white/70 backdrop-blur-[20px] border border-white/60 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-[20px] p-4">
         <TableFilter 
           jenisList={jenisList} 
           provinsis={provinsis} 
@@ -133,41 +134,42 @@ export default async function DataTabelPage({
           defaultProvinsi={resolvedParams.provinsi || ""}
           defaultKota={resolvedParams.kota || ""}
           defaultOperator={resolvedParams.operator || ""}
+          defaultSearch={resolvedParams.search || ""}
         />
 
-        <div className="overflow-x-auto overflow-y-auto max-h-[65vh] rounded-xl border border-slate-200 relative scrollbar-thin scrollbar-thumb-slate-300">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-10 shadow-sm backdrop-blur-md">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 relative scrollbar-thin scrollbar-thumb-slate-300">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-100/90 text-slate-900 font-black border-b border-slate-200 sticky top-0 z-10 shadow-sm backdrop-blur-md uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-4">No</th>
-                <th className="px-6 py-4">Nama Operator</th>
-                <th className="px-6 py-4">Jenis Komunikasi</th>
-                <th className="px-6 py-4">Kabupaten/Kota</th>
-                <th className="px-6 py-4">Koordinat</th>
+                <th className="px-4 py-2.5">No</th>
+                <th className="px-4 py-2.5">Nama Operator</th>
+                <th className="px-4 py-2.5">Jenis Komunikasi</th>
+                <th className="px-4 py-2.5">Kabupaten/Kota</th>
+                <th className="px-4 py-2.5">Koordinat</th>
                 {session?.user?.isAdmin && (
-                  <th className="px-6 py-4 text-center">Aksi</th>
+                  <th className="px-4 py-2.5 text-center">Aksi</th>
                 )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {pengukuranList.length > 0 ? pengukuranList.map((item, index) => (
                 <tr key={item.id.toString()} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 text-slate-500">{skip + index + 1}</td>
-                  <td className="px-6 py-4 font-medium text-slate-800">{item.stasiun_radio?.nama_penyelenggara || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-100">
+                  <td className="px-4 py-2 text-slate-900 font-bold">{skip + index + 1}</td>
+                  <td className="px-4 py-2 font-black text-black">{item.stasiun_radio?.nama_penyelenggara || '-'}</td>
+                  <td className="px-4 py-2">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-tighter">
                       {item.stasiun_radio?.jenis_komunikasi || 'Lainnya'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    <div className="font-medium">{item.locations?.provinsi || '-'}</div>
-                    <div className="text-xs text-slate-400">{item.locations?.kota || '-'}</div>
+                  <td className="px-4 py-2 text-slate-900">
+                    <div className="font-black text-[11px] leading-tight">{item.locations?.provinsi || '-'}</div>
+                    <div className="text-[10px] text-slate-600 font-black leading-tight uppercase opacity-80">{item.locations?.kota || '-'}</div>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 font-mono text-xs">
+                  <td className="px-4 py-2 text-slate-900 font-mono text-[10px] font-bold">
                     {item.lokasi_pemancar?.latitude?.toString() || '-'}, {item.lokasi_pemancar?.longitude?.toString() || '-'}
                   </td>
                   {session?.user?.isAdmin && (
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-4 py-2 text-center">
                       <ActionButtons id={item.id.toString()} />
                     </td>
                   )}
@@ -184,21 +186,11 @@ export default async function DataTabelPage({
         </div>
 
         {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-6">
-            <p className="text-sm text-slate-500">Menampilkan halaman {page} dari {totalPages}</p>
-            <div className="flex gap-2">
-              {page > 1 && (
-                <Link href={`?page=${page - 1}&jenis=${resolvedParams.jenis || ''}&provinsi=${resolvedParams.provinsi || ''}&kota=${resolvedParams.kota || ''}&operator=${resolvedParams.operator || ''}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-                  Sebelumnya
-                </Link>
-              )}
-              {page < totalPages && (
-                <Link href={`?page=${page + 1}&jenis=${resolvedParams.jenis || ''}&provinsi=${resolvedParams.provinsi || ''}&kota=${resolvedParams.kota || ''}&operator=${resolvedParams.operator || ''}`} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-                  Selanjutnya
-                </Link>
-              )}
-            </div>
-          </div>
+          <Pagination 
+            totalPages={totalPages} 
+            currentPage={page} 
+            params={resolvedParams} 
+          />
         )}
       </div>
       </div>
