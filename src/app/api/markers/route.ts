@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { EXCLUDED_JENIS } from '@/lib/constants';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
+  // Rate Limiting
+  const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+  const { success } = rateLimit(ip, 50); // 50 requests per minute
+
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   
   const minLat = parseFloat(searchParams.get('minLat') || '-90');

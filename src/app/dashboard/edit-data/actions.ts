@@ -7,6 +7,16 @@ import { upsertLocation, revalidateTowerPaths } from "@/lib/tower";
 import { createAuditLog } from "@/lib/audit";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { z } from "zod";
+
+const GpsTowerSchema = z.object({
+  operator: z.string().min(1, "Nama Operator wajib diisi"),
+  provinsi: z.string().min(1, "Provinsi wajib diisi"),
+  kota: z.string().min(1, "Kota wajib diisi"),
+  jenis: z.string().min(1, "Jenis Komunikasi wajib diisi"),
+  lat: z.coerce.number().min(-90).max(90),
+  lng: z.coerce.number().min(-180).max(180),
+});
 
 const genericNames = ["communication", "tower", "mast", "unknown", ""];
 
@@ -18,7 +28,7 @@ function isGeneric(name: string | null | undefined) {
 export async function uploadGeojson(formData: FormData) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (!(session as any).user?.isAdmin && (session as any).user?.role !== "admin")) {
+    if (!session?.user?.isAdmin) {
       return { success: false, message: "Unauthorized: Akses ditolak." };
     }
 
@@ -143,27 +153,29 @@ export async function uploadGeojson(formData: FormData) {
 export async function saveGpsTower(formData: FormData) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (!(session as any).user?.isAdmin && (session as any).user?.role !== "admin")) {
+    if (!session?.user?.isAdmin) {
       return { success: false, message: "Unauthorized: Akses ditolak." };
     }
 
-    const operator = formData.get("operator") as string;
-    const provinsi = formData.get("provinsi") as string;
-    const kota = formData.get("kota") as string;
-    const jenis = formData.get("jenis") as string;
-    const latStr = formData.get("lat") as string;
-    const lngStr = formData.get("lng") as string;
+    const rawData = {
+      operator: formData.get("operator"),
+      provinsi: formData.get("provinsi"),
+      kota: formData.get("kota"),
+      jenis: formData.get("jenis"),
+      lat: formData.get("lat"),
+      lng: formData.get("lng"),
+    };
 
-    if (!operator || !kota || !provinsi || !jenis || !latStr || !lngStr) {
-      return { success: false, message: "Semua field harus diisi." };
+    const validation = GpsTowerSchema.safeParse(rawData);
+
+    if (!validation.success) {
+      return { 
+        success: false, 
+        message: "Validasi gagal: " + validation.error.errors.map(e => e.message).join(", ") 
+      };
     }
 
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      return { success: false, message: "Koordinat GPS tidak valid." };
-    }
+    const { operator, provinsi, kota, jenis, lat, lng } = validation.data;
 
     const location = await upsertLocation(kota, provinsi);
 
