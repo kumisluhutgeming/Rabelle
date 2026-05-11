@@ -8,6 +8,7 @@ import { useIdle } from "../IdleProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wifi, Signal, Tv, Radio as RadioIcon, Navigation, Loader2, Globe, Map as MapIcon, Moon, Layers, Palette, MapPin, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { usePreferences } from "../PreferencesProvider";
 
 const MAP_THEMES = {
   colorful: {
@@ -73,7 +74,7 @@ const CITY_CENTERS: Record<string, [number, number]> = {
 export default function MapComponentWebGL({ locations = [] }: { locations: any[] }) {
   const { isUiVisible } = useIdle();
   const searchParams = useSearchParams();
-  const [activeTheme, setActiveTheme] = useState<keyof typeof MAP_THEMES>("colorful");
+  const { mapTheme, setMapTheme, coordFormat, signalUnit } = usePreferences();
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [viewState, setViewState] = useState({
     longitude: 107.6098,
@@ -83,20 +84,55 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
     bearing: 0
   });
 
+  const formatCoordinate = (val: number, isLat: boolean) => {
+    if (coordFormat === "decimal") return val.toFixed(5);
+    
+    const absolute = Math.abs(val);
+    const degrees = Math.floor(absolute);
+    const minutesNotTruncated = (absolute - degrees) * 60;
+    const minutes = Math.floor(minutesNotTruncated);
+    const seconds = Math.floor((minutesNotTruncated - minutes) * 60);
+    
+    const direction = isLat 
+      ? (val >= 0 ? "N" : "S") 
+      : (val >= 0 ? "E" : "W");
+      
+    return `${degrees}°${minutes}'${seconds}" ${direction}`;
+  };
+
   const [markers, setMarkers] = useState<any[]>([]);
   const [stats, setStats] = useState<{province: Record<string, number>, kota: Record<string, number>}>({ province: {}, kota: {} });
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<any | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [nearestTower, setNearestTower] = useState<any | null>(null);
   const [showCoverage, setShowCoverage] = useState(false);
 
   const zoomPercent = Math.max(0, Math.min(100, Math.round(((viewState.zoom - 4.2) / (18.4 - 4.2)) * 100)));
   const renderMode = viewState.zoom < 8.4 ? 'province' : (viewState.zoom < 11.1 ? 'kota' : 'point');
 
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const getSignalInfo = (dbm: number) => {
+    if (signalUnit === "dbm") return `${dbm} dBm`;
+    const percent = Math.max(0, Math.min(100, Math.round(((dbm + 110) / 80) * 100)));
+    return `${percent}%`;
+  };
+
   const fetchMarkers = useCallback(async () => {
     setIsLoading(true);
     const params = new URLSearchParams(searchParams.toString());
-    // In a real viewport-based system, we'd add bbox params here
     try {
       const res = await fetch(`/api/markers?${params.toString()}`);
       const data = await res.json();
@@ -104,7 +140,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       setMarkers(newMarkers);
       setStats(data.stats || { province: {}, kota: {} });
 
-      // Auto fly-to based on true centroid of fetched data
       const kota = params.get('kota');
       const provinsi = params.get('provinsi');
       
@@ -133,7 +168,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
     fetchMarkers();
   }, [fetchMarkers]);
 
-  // Handle Signal Check (Geolocation)
   useEffect(() => {
     const handleCheckSignal = () => {
       if (!('geolocation' in navigator)) {
@@ -148,13 +182,28 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
           const { latitude, longitude } = position.coords;
           setUserLocation({ lat: latitude, lng: longitude });
           
-          // Fly to location
+          if (markers.length > 0) {
+            let closest = null;
+            let minDiv = Infinity;
+            const telcoMarkers = markers.filter(m => m.jenis?.toLowerCase().includes('tele') || m.jenis?.toLowerCase().includes('seluler'));
+            const targetMarkers = telcoMarkers.length > 0 ? telcoMarkers : markers;
+
+            targetMarkers.forEach(m => {
+              const d = calculateDistance(latitude, longitude, Number(m.lat), Number(m.lng));
+              if (d < minDiv) {
+                minDiv = d;
+                closest = { ...m, distance: d };
+              }
+            });
+            setNearestTower(closest);
+          }
+
           setViewState(prev => ({
             ...prev,
             longitude,
             latitude,
-            zoom: 14,
-            transitionDuration: 2000 // Smooth fly
+            zoom: 15,
+            transitionDuration: 2000
           }));
         },
         (error) => {
@@ -167,7 +216,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
 
     window.addEventListener('checkSignal', handleCheckSignal);
     return () => window.removeEventListener('checkSignal', handleCheckSignal);
-  }, []);
+  }, [markers]);
 
   const clusterData = useMemo(() => {
     if (renderMode === 'province') {
@@ -194,7 +243,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
         } else if (CITY_CENTERS[name]) {
            coords = CITY_CENTERS[name];
         }
-        
         if (!coords) return null;
         return { name, lng: coords[0], lat: coords[1], count };
       }).filter(Boolean);
@@ -207,7 +255,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       <Map
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
-        mapStyle={MAP_THEMES[activeTheme].url as any}
+        mapStyle={MAP_THEMES[mapTheme as keyof typeof MAP_THEMES].url as any}
         style={{ width: "100%", height: "100%" }}
         mapLibre={maplibregl}
         maxZoom={18.4}
@@ -221,29 +269,16 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
             setSelectedPoint(null);
           }
         }}
-        onMouseEnter={(e) => {
-          if (e.features && e.features.length > 0) e.target.getCanvas().style.cursor = 'pointer';
-        }}
-        onMouseLeave={(e) => {
-          e.target.getCanvas().style.cursor = '';
-        }}
       >
         <NavigationControl position="bottom-right" />
         
-        {/* Render Clusters as HTML Markers (for high fidelity) */}
         {renderMode !== 'point' && clusterData.map((cluster: any) => (
           <Marker key={cluster.name} longitude={cluster.lng} latitude={cluster.lat} anchor="center">
             <div 
               className="flex flex-col items-center"
               onClick={(e) => {
                 e.stopPropagation();
-                setViewState(prev => ({
-                  ...prev,
-                  longitude: cluster.lng,
-                  latitude: cluster.lat,
-                  zoom: renderMode === 'province' ? 8.5 : 12.0,
-                  transitionDuration: 1500
-                }));
+                setViewState(prev => ({ ...prev, longitude: cluster.lng, latitude: cluster.lat, zoom: renderMode === 'province' ? 8.5 : 12.0, transitionDuration: 1500 }));
               }}
             >
               <div className="w-12 h-12 rounded-2xl bg-indigo-600/90 border border-white/40 shadow-2xl backdrop-blur-md flex flex-col items-center justify-center text-white scale-90 hover:scale-100 transition-transform cursor-pointer">
@@ -257,7 +292,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
           </Marker>
         ))}
 
-        {/* Render Points (Using WebGL Layer for thousands of points) */}
         {renderMode === 'point' && (
           <Source id="points" type="geojson" data={{
             type: "FeatureCollection",
@@ -267,82 +301,61 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
               properties: { ...m }
             }))
           }}>
-            {/* Radius Gradasi (Coverage) - Merah, Kuning, Hijau */}
-            {/* Merah (Luar / Sinyal Lemah) */}
             {showCoverage && (
-              <Layer
-                id="radius-layer-outer"
-                type="circle"
-                paint={{
-                  "circle-radius": [
-                    "let", "base_r", ["match", ["get", "jenis"], "Televisi", 50000, "Televisi Siaran", 50000, "Radio Siaran", 30000, "Radio", 30000, 5000],
-                    [
-                      "interpolate", ["exponential", 2], ["zoom"],
-                      10, ["*", 1.0, ["/", ["var", "base_r"], 152]],
-                      15, ["*", 1.0, ["/", ["var", "base_r"], 4.77]]
-                    ]
-                  ],
-                  "circle-color": "#ef4444",
-                  "circle-opacity": 0.15,
-                  "circle-blur": 0.8
-                }}
-              />
+              <Layer id="radius-outer" type="circle" paint={{ 
+                "circle-radius": ["let", "base", ["match", ["get", "jenis"], "Televisi", 50000, "Radio Siaran", 30000, 5000], 
+                  ["interpolate", ["exponential", 2], ["zoom"], 
+                    0, ["/", ["var", "base"], 156543],
+                    10, ["/", ["var", "base"], 152.87],
+                    15, ["/", ["var", "base"], 4.77],
+                    20, ["/", ["var", "base"], 0.149]
+                  ]
+                ], 
+                "circle-color": "#ef4444", 
+                "circle-opacity": 0.15, 
+                "circle-blur": 0.8,
+                "circle-pitch-alignment": "map",
+                "circle-pitch-scale": "map"
+              }} />
             )}
-            {/* Kuning (Tengah / Sinyal Sedang) */}
             {showCoverage && (
-              <Layer
-                id="radius-layer-mid"
-                type="circle"
-                paint={{
-                  "circle-radius": [
-                    "let", "base_r", ["match", ["get", "jenis"], "Televisi", 50000, "Televisi Siaran", 50000, "Radio Siaran", 30000, "Radio", 30000, 5000],
-                    [
-                      "interpolate", ["exponential", 2], ["zoom"],
-                      10, ["*", 0.6, ["/", ["var", "base_r"], 152]],
-                      15, ["*", 0.6, ["/", ["var", "base_r"], 4.77]]
-                    ]
-                  ],
-                  "circle-color": "#eab308",
-                  "circle-opacity": 0.25,
-                  "circle-blur": 0.8
-                }}
-              />
+              <Layer id="radius-mid" type="circle" paint={{ 
+                "circle-radius": ["let", "base", ["match", ["get", "jenis"], "Televisi", 50000, "Radio Siaran", 30000, 5000], 
+                  ["interpolate", ["exponential", 2], ["zoom"], 
+                    0, ["/", ["*", 0.6, ["var", "base"]], 156543],
+                    10, ["/", ["*", 0.6, ["var", "base"]], 152.87],
+                    15, ["/", ["*", 0.6, ["var", "base"]], 4.77],
+                    20, ["/", ["*", 0.6, ["var", "base"]], 0.149]
+                  ]
+                ], 
+                "circle-color": "#eab308", 
+                "circle-opacity": 0.25, 
+                "circle-blur": 0.8,
+                "circle-pitch-alignment": "map",
+                "circle-pitch-scale": "map"
+              }} />
             )}
-            {/* Hijau (Dalam / Sinyal Kuat) */}
             {showCoverage && (
-              <Layer
-                id="radius-layer-inner"
-                type="circle"
-                paint={{
-                  "circle-radius": [
-                    "let", "base_r", ["match", ["get", "jenis"], "Televisi", 50000, "Televisi Siaran", 50000, "Radio Siaran", 30000, "Radio", 30000, 5000],
-                    [
-                      "interpolate", ["exponential", 2], ["zoom"],
-                      10, ["*", 0.25, ["/", ["var", "base_r"], 152]],
-                      15, ["*", 0.25, ["/", ["var", "base_r"], 4.77]]
-                    ]
-                  ],
-                  "circle-color": "#10b981",
-                  "circle-opacity": 0.4,
-                  "circle-blur": 0.5
-                }}
-              />
+              <Layer id="radius-inner" type="circle" paint={{ 
+                "circle-radius": ["let", "base", ["match", ["get", "jenis"], "Televisi", 50000, "Radio Siaran", 30000, 5000], 
+                  ["interpolate", ["exponential", 2], ["zoom"], 
+                    0, ["/", ["*", 0.25, ["var", "base"]], 156543],
+                    10, ["/", ["*", 0.25, ["var", "base"]], 152.87],
+                    15, ["/", ["*", 0.25, ["var", "base"]], 4.77],
+                    20, ["/", ["*", 0.25, ["var", "base"]], 0.149]
+                  ]
+                ], 
+                "circle-color": "#10b981", 
+                "circle-opacity": 0.4, 
+                "circle-blur": 0.5,
+                "circle-pitch-alignment": "map",
+                "circle-pitch-scale": "map"
+              }} />
             )}
-            {/* Titik Pusat (Tower) */}
-            <Layer
-              id="point-layer"
-              type="circle"
-              paint={{
-                "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 15, 8],
-                "circle-color": "#4f46e5",
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "#ffffff"
-              }}
-            />
+            <Layer id="point-layer" type="circle" paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 15, 8], "circle-color": "#4f46e5", "circle-stroke-width": 2, "circle-stroke-color": "#ffffff" }} />
           </Source>
         )}
 
-        {/* User Location Radar Ping */}
         {userLocation && (
           <Marker longitude={userLocation.lng} latitude={userLocation.lat} anchor="center">
             <div className="relative flex items-center justify-center">
@@ -353,95 +366,97 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
           </Marker>
         )}
 
-        {/* Selected Point Popup (Idea 4 reverted) */}
         {selectedPoint && (
-          <Popup
-            longitude={selectedPoint.lng}
-            latitude={selectedPoint.lat}
-            anchor="bottom"
-            onClose={() => setSelectedPoint(null)}
-            closeOnClick={false}
-            className="z-50"
-            maxWidth="320px"
-          >
+          <Popup longitude={selectedPoint.lng} latitude={selectedPoint.lat} anchor="bottom" onClose={() => setSelectedPoint(null)} closeOnClick={false} className="z-50" maxWidth="320px">
             <div className="p-1 space-y-3 min-w-[240px]">
-              {/* Header */}
               <div>
                 <h3 className="font-black text-slate-800 text-sm leading-tight">{selectedPoint.nama}</h3>
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-black uppercase tracking-widest rounded">{selectedPoint.jenis || 'Infrastruktur'}</span>
-                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase tracking-widest rounded">Aktif</span>
                 </div>
               </div>
-
-              {/* Body */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <div className="flex items-start gap-2">
                   <MapPin size={12} className="text-rose-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    {selectedPoint.alamat && selectedPoint.alamat.trim() !== "" && (
-                      <div className="text-[11px] font-bold text-slate-800 leading-snug mb-0.5">{selectedPoint.alamat}</div>
-                    )}
-                    <div className="text-[10px] font-medium text-slate-500">{selectedPoint.kota}, {selectedPoint.provinsi}</div>
-                  </div>
+                  <div className="text-[10px] font-medium text-slate-500">{selectedPoint.kota}, {selectedPoint.provinsi}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Navigation size={12} className="text-emerald-500 flex-shrink-0" />
-                  <span className="text-[10px] font-mono font-medium text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded">{selectedPoint.lat.toFixed(5)}, {selectedPoint.lng.toFixed(5)}</span>
+                <div className="flex items-center gap-2 font-mono text-[10px]">
+                  <Navigation size={12} className="text-emerald-500" />
+                  {formatCoordinate(selectedPoint.lat, true)}, {formatCoordinate(selectedPoint.lng, false)}
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="pt-2 border-t border-slate-100">
-                <a href={`/dashboard/data-tabel?search=${encodeURIComponent(selectedPoint.nama)}`} className="w-full py-1.5 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors flex justify-center items-center">
-                  Lihat Detail Tabel
-                </a>
               </div>
             </div>
           </Popup>
         )}
       </Map>
 
-      {/* Viewport Status Indicator (Left) */}
-      <div className={`absolute bottom-6 left-6 z-[1000] flex flex-col gap-3 transition-opacity duration-300 ${!isUiVisible ? "opacity-0" : "opacity-100"}`}>
-        <div className="liquid-glass px-4 py-3 shadow-xl flex items-center gap-3">
+      {/* Floating HUD Outside Map component for safety */}
+      <AnimatePresence>
+        {userLocation && nearestTower && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-6 left-1/2 -translate-x-1/2 z-[2000]">
+            <div className="bg-background/80 backdrop-blur-md border border-border shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-6 min-w-[400px]">
+              <div className="flex items-center gap-4 border-r border-border/50 pr-6">
+                {(() => {
+                  const dbm = Math.max(-110, Math.min(-30, Math.round(-40 - 20 * Math.log10(Math.max(10, nearestTower.distance) / 10))));
+                  const colorClass = dbm > -65 ? "text-emerald-500" : (dbm > -85 ? "text-amber-500" : "text-rose-500");
+                  return (
+                    <>
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-end gap-0.5 h-4 mb-1">
+                          {[1, 2, 3, 4].map(b => (
+                            <div key={b} className={`w-1 rounded-full ${b <= (dbm > -65 ? 4 : (dbm > -85 ? 3 : 1)) ? (dbm > -65 ? 'bg-emerald-500' : 'bg-amber-500') : 'bg-muted/30'}`} style={{ height: `${b * 25}%` }} />
+                          ))}
+                        </div>
+                        <span className={`text-[12px] font-black tracking-tighter ${colorClass}`}>{getSignalInfo(dbm)}</span>
+                      </div>
+                      <div className="h-8 w-px bg-border/30 mx-1" />
+                      <div>
+                        <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1">Status</div>
+                        <div className={`text-[11px] font-black uppercase ${colorClass}`}>{dbm > -65 ? "Sangat Kuat" : "Cukup Baik"}</div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="flex-1 flex items-center gap-6">
+                <div className="min-w-0">
+                  <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1">Tower Terdekat</div>
+                  <div className="text-[11px] font-bold text-foreground truncate max-w-[120px]">{nearestTower.nama}</div>
+                </div>
+                <div>
+                  <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1">Jarak</div>
+                  <div className="text-[11px] font-bold text-foreground">{(nearestTower.distance / 1000).toFixed(2)} km</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pl-4 border-l border-border/50 text-muted-foreground">
+                <button onClick={() => window.dispatchEvent(new CustomEvent('checkSignal'))} className="p-2 hover:text-indigo-600"><Loader2 size={14} /></button>
+                <button onClick={() => setUserLocation(null)} className="p-2 hover:text-red-500"><X size={14} /></button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="absolute bottom-6 left-6 z-[1000]">
+        <div className="bg-background/95 backdrop-blur-md border border-border px-4 py-3 shadow-2xl rounded-2xl flex items-center gap-3">
           {isLoading ? <Loader2 size={16} className="animate-spin text-indigo-500" /> : <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
           <div>
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Akselerasi GPU</div>
-            <div className="text-[11px] font-black text-slate-700">{renderMode === 'point' ? `Menampilkan ${markers.length} Titik` : `Mode Kluster ${renderMode === 'province' ? 'Provinsi' : 'Kota'}`}</div>
+            <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Akselerasi GPU</div>
+            <div className="text-[11px] font-black text-foreground">{renderMode === 'point' ? `Menampilkan ${markers.length} Titik` : `Mode Kluster ${renderMode === 'province' ? 'Provinsi' : 'Kota'}`}</div>
           </div>
         </div>
       </div>
 
-      {/* Control Cluster (Right) */}
-      <div className={`absolute bottom-6 right-16 z-[1000] flex items-end gap-3 transition-opacity duration-300 ${!isUiVisible ? "opacity-0" : "opacity-100"}`}>
+      <div className="absolute bottom-6 right-16 z-[1000] flex items-end gap-3">
+        <button onClick={() => window.dispatchEvent(new CustomEvent('checkSignal'))} className="w-12 h-12 rounded-2xl bg-background/95 border border-border shadow-2xl hover:scale-105 transition-all text-indigo-600 flex items-center justify-center"><Signal size={20} /></button>
+        <button onClick={() => setShowCoverage(!showCoverage)} className={`w-12 h-12 rounded-2xl shadow-2xl hover:scale-105 transition-all flex items-center justify-center border ${showCoverage ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-background/95 border-border text-indigo-600'}`}><Wifi size={20} /></button>
         
-        {/* Coverage Toggle Button */}
-        <button 
-          onClick={() => setShowCoverage(!showCoverage)}
-          className={`liquid-glass relative p-3 shadow-xl hover:scale-105 active:scale-95 transition-all border-none flex items-center justify-center ${showCoverage ? 'text-white bg-indigo-500' : 'text-indigo-600'}`}
-          title={showCoverage ? "Sembunyikan Jangkauan Sinyal" : "Tampilkan Jangkauan Sinyal"}
-        >
-          <Wifi size={20} />
-          {showCoverage && <span className="absolute top-2 right-2 w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
-        </button>
-
-        {/* Theme Picker */}
         <div className="relative">
           <AnimatePresence>
             {isThemeMenuOpen && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute bottom-full mb-3 right-0 origin-bottom-right liquid-glass p-2 shadow-2xl flex flex-col gap-1 min-w-[140px]"
-              >
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute bottom-full mb-3 right-0 bg-background/95 border border-border p-2 shadow-2xl flex flex-col gap-1 min-w-[140px] rounded-2xl">
                 {Object.entries(MAP_THEMES).map(([key, theme]) => (
-                  <button 
-                    key={key} 
-                    onClick={() => { setActiveTheme(key as any); setIsThemeMenuOpen(false); }}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-black transition-all ${activeTheme === key ? "bg-indigo-600 text-white shadow-md" : "hover:bg-white/40 text-slate-700"}`}
-                  >
+                  <button key={key} onClick={() => { setMapTheme(key as any); setIsThemeMenuOpen(false); }} className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-black ${mapTheme === key ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
                     {theme.icon === "Globe" && <Globe size={14} />}
                     {theme.icon === "Map" && <MapIcon size={14} />}
                     {theme.icon === "Moon" && <Moon size={14} />}
@@ -452,19 +467,12 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
               </motion.div>
             )}
           </AnimatePresence>
-          <button 
-            onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-            className="liquid-glass p-3 shadow-xl hover:scale-105 active:scale-95 transition-all text-indigo-600 border-none"
-            title="Ganti Tema Peta"
-          >
-            <Palette size={20} />
-          </button>
+          <button onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)} className="w-12 h-12 rounded-2xl bg-background/95 border border-border shadow-2xl hover:scale-105 transition-all text-indigo-600 flex items-center justify-center"><Palette size={20} /></button>
         </div>
 
-        {/* Zoom Bubble */}
-        <div className="liquid-glass px-3 py-2 shadow-xl border-none min-w-[60px] text-center mb-[2px]">
-          <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Zoom</div>
-          <div className="text-[11px] font-black text-indigo-600 font-mono leading-none">{zoomPercent}%</div>
+        <div className="bg-background/95 border border-border px-3 py-2 shadow-2xl rounded-2xl min-w-[60px] text-center">
+          <div className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter mb-0.5">Zoom</div>
+          <div className="text-[11px] font-black text-indigo-600 font-mono">{zoomPercent}%</div>
         </div>
       </div>
     </div>
