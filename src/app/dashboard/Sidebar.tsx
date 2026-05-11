@@ -26,10 +26,10 @@ export default function Sidebar({ session }: { session: any }) {
     <aside 
       className={`bg-card border-r border-border ${positionClass} flex flex-col z-50 transition-all duration-300 ease-in-out ${widthClass} ${opacityClass} !rounded-r-2xl shadow-sm`}
     >
-      <div className="p-8 flex items-center justify-between">
+      <div className={`${isSidebarCollapsed ? "p-4" : "p-8"} flex items-center justify-between`}>
         {!isSidebarCollapsed ? (
           <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap group">
-            <div className="w-11 h-11 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform">
               {mounted && theme === "dark" ? (
                 <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-all" />
               ) : (
@@ -40,7 +40,7 @@ export default function Sidebar({ session }: { session: any }) {
           </Link>
         ) : (
           <Link href="/" className="flex items-center justify-center w-full">
-            <div className="w-11 h-11 flex items-center justify-center hover:scale-110 transition-transform">
+            <div className="w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform">
               {mounted && theme === "dark" ? (
                 <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain opacity-90 transition-all" />
               ) : (
