@@ -57,7 +57,7 @@ export async function GET(request: Request) {
         id: true,
         stasiun_radio: { select: { nama_penyelenggara: true, jenis_komunikasi: true } },
         locations: { select: { kota: true, provinsi: true } },
-        lokasi_pemancar: { select: { latitude: true, longitude: true } }
+        lokasi_pemancar: { select: { latitude: true, longitude: true, tinggi_menara_m: true, frekuensi: true, azimuths: true } }
       },
       take: 1500,
     });
@@ -94,14 +94,26 @@ export async function GET(request: Request) {
       const lat = Number(m.lokasi_pemancar?.latitude);
       const lng = Number(m.lokasi_pemancar?.longitude);
 
+      let parsedAzimuths = null;
+      if (m.lokasi_pemancar?.azimuths) {
+        try {
+          parsedAzimuths = JSON.parse(m.lokasi_pemancar.azimuths);
+        } catch (e) {}
+      }
+
       return {
         id: m.id.toString(),
-        lat: isAdmin ? lat : Math.round(lat * 1000) / 1000,
-        lng: isAdmin ? lng : Math.round(lng * 1000) / 1000,
+        lat: lat,
+        lng: lng,
+        latStr: m.lokasi_pemancar?.latitude?.toString(),
+        lngStr: m.lokasi_pemancar?.longitude?.toString(),
         nama: m.stasiun_radio?.nama_penyelenggara || 'Unknown',
         jenis: m.stasiun_radio?.jenis_komunikasi || 'Lainnya',
         kota: m.locations?.kota || 'Unknown',
-        provinsi: m.locations?.provinsi || 'Unknown'
+        provinsi: m.locations?.provinsi || 'Unknown',
+        hTower: m.lokasi_pemancar?.tinggi_menara_m ? Number(m.lokasi_pemancar.tinggi_menara_m) : undefined,
+        freq: m.lokasi_pemancar?.frekuensi || undefined,
+        azimuths: parsedAzimuths
       };
     });
 
