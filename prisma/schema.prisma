@@ -34,6 +34,8 @@ model lokasi_pemancar {
   tinggi_lokasi_mdpl Decimal?     @db.Decimal(8, 2)
   tinggi_gedung_m    Decimal?     @db.Decimal(8, 2)
   tinggi_menara_m    Decimal?     @db.Decimal(8, 2)
+  frekuensi          Int?
+  azimuths           String?      @db.VarChar(255)
   location_id        BigInt       @db.UnsignedBigInt
   created_at         DateTime?    @db.Timestamp(0)
   updated_at         DateTime?    @db.Timestamp(0)
