@@ -171,7 +171,7 @@ export async function saveGpsTower(formData: FormData) {
     if (!validation.success) {
       return { 
         success: false, 
-        message: "Validasi gagal: " + validation.error.errors.map(e => e.message).join(", ") 
+        message: "Validasi gagal: " + validation.error.issues.map((e: any) => e.message).join(", ") 
       };
     }
 

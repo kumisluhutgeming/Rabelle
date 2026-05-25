@@ -31,7 +31,7 @@ export default function DashboardPageClient({ stats }: { stats: any }) {
 
   if (!mounted) return null;
 
-  const isAdmin = session?.user?.isAdmin || session?.user?.role === "admin";
+  const isAdmin = session?.user?.isAdmin || (session?.user as any)?.role === "admin";
 
   return (
     <div className="space-y-8 pb-12">

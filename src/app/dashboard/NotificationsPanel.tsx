@@ -64,7 +64,7 @@ import { useSession } from "next-auth/react";
 export default function NotificationsPanel() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const isAdmin = session?.user?.isAdmin || session?.user?.role === "admin";
+  const isAdmin = session?.user?.isAdmin || (session?.user as any)?.role === "admin";
   
   const [notifications, setNotifications] = useState(INITIAL_NOTIFS);
   
