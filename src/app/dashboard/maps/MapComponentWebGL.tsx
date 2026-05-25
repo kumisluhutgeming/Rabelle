@@ -99,8 +99,27 @@ const getFrequencyForOperator = (operatorName: string, seed: number): number => 
   return 1800;
 };
 
-const getTowerParams = (id: string, localDensity: number = 0, operatorName: string = '') => {
+const getTowerParams = (id: string, localDensity: number = 0, operatorName: string = '', type: 'telco' | 'radio' | 'tv' = 'telco') => {
   const seed = pseudoRandomSeed(id);
+
+  if (type === 'radio') {
+    return {
+      freq: 100 + (seed * 8), // 100 - 108 MHz
+      hTower: 60 + (seed * 40), // 60 - 100 meters
+      azimuths: [0, 90, 180, 270], // Omni-directional
+      txPower: 70, // 10,000 W (70 dBm)
+    };
+  }
+
+  if (type === 'tv') {
+    return {
+      freq: 500 + (seed * 200), // UHF 500-700 MHz
+      hTower: 80 + (seed * 70), // 80 - 150 meters
+      azimuths: [0, 90, 180, 270],
+      txPower: 77, // 50,000 W (77 dBm)
+    };
+  }
+
   const freq = getFrequencyForOperator(operatorName, seed);
   
   // Dynamic tower height based on spatial density
@@ -126,11 +145,10 @@ const getTowerParams = (id: string, localDensity: number = 0, operatorName: stri
      azimuths.push(Math.round(az));
   }
   
-  return { freq, hTower, azimuths };
+  return { freq, hTower, azimuths, txPower: 43 }; // 43 dBm (20W)
 };
 
-const calculateOkumuraHataDbm = (distanceMeters: number, freqMHz: number, hTower: number) => {
-  const txPower = 43; // 20W
+const calculateOkumuraHataDbm = (distanceMeters: number, freqMHz: number, hTower: number, txPower: number = 43) => {
   const antennaGain = 15; // dBi
   const urbanClutterLoss = 28; // dB (Dense Urban attenuation)
   const dKm = Math.max(0.01, distanceMeters / 1000); 
@@ -138,8 +156,7 @@ const calculateOkumuraHataDbm = (distanceMeters: number, freqMHz: number, hTower
   return Math.round(txPower + antennaGain - pathLoss - urbanClutterLoss);
 };
 
-const calcMaxDistanceKm = (freqMHz: number, hTower: number, targetDbm: number) => {
-  const txPower = 43; 
+const calcMaxDistanceKm = (freqMHz: number, hTower: number, targetDbm: number, txPower: number = 43) => {
   const antennaGain = 15; 
   const urbanClutterLoss = 28;
   const maxPathLoss = txPower + antennaGain - targetDbm - urbanClutterLoss;
@@ -450,135 +467,90 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
 
   const processMarkerCoverage = useCallback((m: any, hexMap: globalThis.Map<string, { dbm: number, level: string }>, singlePolyMap: globalThis.Map<string, any>, allMarkers: any[], hexMode: string) => {
     const res = 9;
-    const isTelco = m.jenis?.toLowerCase().includes('tele') || m.jenis?.toLowerCase().includes('seluler');
     const isRadio = m.jenis?.toLowerCase().includes('radio');
-    const isTv = m.jenis?.toLowerCase().includes('televisi');
+    const isTv = m.jenis?.toLowerCase().includes('televisi') || m.jenis?.toLowerCase().includes('tv');
+    const type = isRadio ? 'radio' : (isTv ? 'tv' : 'telco');
     
     const lng = Number(m.lng);
     const lat = Number(m.lat);
-    
     const centerHex = h3.latLngToCell(lat, lng, res);
     
-    if (isTelco) {
-      // Use database values if they exist, otherwise fallback to pseudo-random generation
-      const dbFreq = m.freq ? Number(m.freq) : undefined;
-      const dbHTower = m.hTower ? Number(m.hTower) : undefined;
-      const dbAzimuths = Array.isArray(m.azimuths) ? m.azimuths : undefined;
+    const dbFreq = m.freq ? Number(m.freq) : undefined;
+    const dbHTower = m.hTower ? Number(m.hTower) : undefined;
+    const dbAzimuths = Array.isArray(m.azimuths) ? m.azimuths : undefined;
 
-      let freq = dbFreq;
-      let hTower = dbHTower;
-      let azimuths = dbAzimuths;
+    let freq = dbFreq;
+    let hTower = dbHTower;
+    let azimuths = dbAzimuths;
+    let txPower = type === 'radio' ? 70 : (type === 'tv' ? 77 : 43);
 
-      if (!freq || !hTower || !azimuths) {
-        // Calculate local density (towers within 1km) for fallback calculation
-        let localDensity = 0;
+    if (!freq || !hTower || (!azimuths && type === 'telco')) {
+      let localDensity = 0;
+      if (type === 'telco') {
         for (const other of allMarkers) {
           if (other.id !== m.id) {
             const d = calculateDistance(lat, lng, Number(other.lat), Number(other.lng));
             if (d < 1000) localDensity++;
           }
         }
-        const fallback = getTowerParams(m.id.toString(), localDensity, m.nama || '');
-        freq = freq || fallback.freq;
-        hTower = hTower || fallback.hTower;
-        azimuths = azimuths || fallback.azimuths;
       }
-      
-      const maxRad = calcMaxDistanceKm(freq!, hTower!, -110);
-      
-      if (hexMode === 'single') {
-         // Outer ring (Weak/Red)
-         const polyOuter = circle([lng, lat], maxRad, {steps: 6, units: 'kilometers'});
-         polyOuter.properties = { dbm: -110, level: 'outer', id: m.id.toString() + '_outer' };
-         singlePolyMap.set(polyOuter.properties.id, polyOuter);
+      const fallback = getTowerParams(m.id.toString(), localDensity, m.nama || '', type);
+      freq = freq || fallback.freq;
+      hTower = hTower || fallback.hTower;
+      azimuths = azimuths || fallback.azimuths;
+      txPower = fallback.txPower;
+    }
+    
+    if (!azimuths || azimuths.length === 0) azimuths = [0, 90, 180, 270];
 
-         // Mid ring (Medium/Yellow)
-         const midRad = calcMaxDistanceKm(freq!, hTower!, -90);
-         const polyMid = circle([lng, lat], midRad, {steps: 6, units: 'kilometers'});
-         polyMid.properties = { dbm: -90, level: 'mid', id: m.id.toString() + '_mid' };
-         singlePolyMap.set(polyMid.properties.id, polyMid);
+    const maxRad = calcMaxDistanceKm(freq!, hTower!, -110, txPower);
+    
+    if (hexMode === 'single') {
+       const polyOuter = circle([lng, lat], maxRad, {steps: 6, units: 'kilometers'});
+       polyOuter.properties = { dbm: -110, level: 'outer', id: m.id.toString() + '_outer' };
+       singlePolyMap.set(polyOuter.properties.id, polyOuter);
 
-         // Inner ring (Strong/Green)
-         const innerRad = calcMaxDistanceKm(freq!, hTower!, -70);
-         const polyInner = circle([lng, lat], innerRad, {steps: 6, units: 'kilometers'});
-         polyInner.properties = { dbm: -65, level: 'inner', id: m.id.toString() + '_inner' };
-         singlePolyMap.set(polyInner.properties.id, polyInner);
-         
-         return; // Skip grid disk calculations
-      }
-      
-      const k = Math.min(25, Math.ceil(maxRad / 0.174));
-      const rings = h3.gridDisk(centerHex, k);
-      
-      for (const hex of rings) {
-         const [hLat, hLng] = h3.cellToLatLng(hex);
-         const dMeters = calculateDistance(lat, lng, hLat, hLng);
-         const omniDbm = calculateOkumuraHataDbm(dMeters, freq!, hTower!);
-         
-         const bearing = getBearing(lat, lng, hLat, hLng);
-         const atten = getAntennaAttenuation(bearing, azimuths!, dMeters);
-         
-         const finalDbm = omniDbm - atten;
-         
-         if (finalDbm >= -110) {
-            const existing = hexMap.get(hex);
-            if (existing === undefined || finalDbm > existing.dbm) {
-               let level = 'outer';
-               if (finalDbm >= -75) level = 'inner';
-               else if (finalDbm >= -90) level = 'mid';
-               hexMap.set(hex, { dbm: finalDbm, level });
-            }
-         }
-      }
+       const midRad = calcMaxDistanceKm(freq!, hTower!, -90, txPower);
+       const polyMid = circle([lng, lat], midRad, {steps: 6, units: 'kilometers'});
+       polyMid.properties = { dbm: -90, level: 'mid', id: m.id.toString() + '_mid' };
+       singlePolyMap.set(polyMid.properties.id, polyMid);
 
-      // ── Guarantee strong signal at tower foot (physics: 0m distance) ──────
-      // Only force the center hex — no sector-neighbor stamps.
-      // The monotonic enforcement pass (below) will prevent isolated green islands.
-      const centerExisting = hexMap.get(centerHex);
-      if (!centerExisting || centerExisting.dbm < -70) {
-        hexMap.set(centerHex, { dbm: -65, level: 'inner' });
-      }
-    } else {
-      const radiusMultiplierKm = isTv ? 10 : (isRadio ? 5 : 1);
+       const innerRad = calcMaxDistanceKm(freq!, hTower!, -70, txPower);
+       const polyInner = circle([lng, lat], innerRad, {steps: 6, units: 'kilometers'});
+       polyInner.properties = { dbm: -65, level: 'inner', id: m.id.toString() + '_inner' };
+       singlePolyMap.set(polyInner.properties.id, polyInner);
+       
+       return; 
+    }
+    
+    const kCap = type === 'telco' ? 25 : 80;
+    const k = Math.min(kCap, Math.ceil(maxRad / 0.174));
+    const rings = h3.gridDisk(centerHex, k);
+    
+    for (const hex of rings) {
+       const [hLat, hLng] = h3.cellToLatLng(hex);
+       const dMeters = calculateDistance(lat, lng, hLat, hLng);
+       const omniDbm = calculateOkumuraHataDbm(dMeters, freq!, hTower!, txPower);
+       
+       const bearing = getBearing(lat, lng, hLat, hLng);
+       const atten = getAntennaAttenuation(bearing, azimuths!, dMeters);
+       
+       const finalDbm = omniDbm - atten;
+       
+       if (finalDbm >= -110) {
+          const existing = hexMap.get(hex);
+          if (existing === undefined || finalDbm > existing.dbm) {
+             let level = 'outer';
+             if (finalDbm >= -75) level = 'inner';
+             else if (finalDbm >= -90) level = 'mid';
+             hexMap.set(hex, { dbm: finalDbm, level });
+          }
+       }
+    }
 
-      if (hexMode === 'single') {
-         // Outer
-         const polyOuter = circle([lng, lat], radiusMultiplierKm, {steps: 6, units: 'kilometers'});
-         polyOuter.properties = { dbm: -110, level: 'outer', id: m.id.toString() + '_outer' };
-         singlePolyMap.set(polyOuter.properties.id, polyOuter);
-
-         // Mid
-         const polyMid = circle([lng, lat], radiusMultiplierKm * 0.6, {steps: 6, units: 'kilometers'});
-         polyMid.properties = { dbm: -90, level: 'mid', id: m.id.toString() + '_mid' };
-         singlePolyMap.set(polyMid.properties.id, polyMid);
-
-         // Inner
-         const polyInner = circle([lng, lat], radiusMultiplierKm * 0.3, {steps: 6, units: 'kilometers'});
-         polyInner.properties = { dbm: -65, level: 'inner', id: m.id.toString() + '_inner' };
-         singlePolyMap.set(polyInner.properties.id, polyInner);
-
-         return;
-      }
-
-      const k = Math.min(50, Math.ceil(radiusMultiplierKm / 0.174));
-      const rings = h3.gridDisk(centerHex, k);
-      
-      for (const hex of rings) {
-         const [hLat, hLng] = h3.cellToLatLng(hex);
-         const dMeters = calculateDistance(lat, lng, hLat, hLng);
-         const normalized = Math.max(0, 1 - dMeters / (radiusMultiplierKm * 1000));
-         const dbm = -110 + Math.round(normalized * 60);
-         
-         if (dbm >= -110) {
-            const existing = hexMap.get(hex);
-            if (existing === undefined || dbm > existing.dbm) {
-               let level = 'outer';
-               if (dbm >= -75) level = 'inner';
-               else if (dbm >= -90) level = 'mid';
-               hexMap.set(hex, { dbm, level });
-            }
-         }
-      }
+    const centerExisting = hexMap.get(centerHex);
+    if (!centerExisting || centerExisting.dbm < -70) {
+      hexMap.set(centerHex, { dbm: -65, level: 'inner' });
     }
   }, []);
 
@@ -756,7 +728,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
            id: 'deck-point-layer',
            data: markers.filter(m => m.lng !== undefined && m.lat !== undefined),
            pickable: false, // MapLibre handles clicks via transparent fallback layer
-           getPosition: (d: any) => [Number(d.lng), Number(d.lat)],
+           getPosition: (d: any) => [Number(d.lng), Number(d.lat), hexagonMode === 'single' ? 10 : 400],
            getFillColor: [79, 70, 229, 255], // indigo-600
            getLineColor: [255, 255, 255, 255],
            lineWidthMinPixels: 2,
@@ -765,6 +737,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
            getRadius: 5,
            radiusMinPixels: 3,
            radiusMaxPixels: 8,
+           parameters: { depthTest: false } // Force draw on top of 3D hexagons
          })
        );
     }
