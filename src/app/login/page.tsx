@@ -167,12 +167,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="relative">
+            <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
-              <span className="bg-background px-3 text-muted-foreground">atau gunakan email</span>
+              <span className="bg-background px-3 text-muted-foreground">atau gunakan kredensial</span>
             </div>
           </div>
 
@@ -205,7 +205,7 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-[13px] font-bold text-secondary tracking-tight">Email atau Username</label>
+                <label className="text-[13px] font-bold text-secondary tracking-tight">Username atau Email</label>
               </div>
               <div className="relative group">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
@@ -219,7 +219,7 @@ export default function LoginPage() {
                     w-full pl-10 pr-4 py-3 rounded-xl border bg-secondary/30 outline-none transition-all font-medium text-sm
                     ${errors.login ? "border-destructive focus:ring-destructive/20" : "border-border focus:border-primary focus:ring-4 focus:ring-primary/10"}
                   `}
-                  placeholder="name@example.com"
+                  placeholder="Username / Email yang terhubung"
                 />
               </div>
               {errors.login && (

@@ -11,6 +11,8 @@ import {
   ArcElement
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import { useTheme } from '@/components/ThemeProvider';
+import { useState, useEffect } from 'react';
 
 ChartJS.register(
   CategoryScale,
@@ -22,7 +24,7 @@ ChartJS.register(
   ArcElement
 );
 
-const sharedOptions = {
+const getSharedOptions = (isDark: boolean) => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -36,14 +38,14 @@ const sharedOptions = {
           size: 12,
           weight: 500,
         },
-        color: '#1d1d1f'
+        color: isDark ? '#f4f4f5' : '#1d1d1f' // zinc-100 or almost black
       }
     },
     tooltip: {
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      titleColor: '#1d1d1f',
-      bodyColor: '#1d1d1f',
-      borderColor: 'rgba(0,0,0,0.1)',
+      backgroundColor: isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)', // zinc-900 or white
+      titleColor: isDark ? '#f4f4f5' : '#1d1d1f',
+      bodyColor: isDark ? '#f4f4f5' : '#1d1d1f',
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
       borderWidth: 1,
       padding: 12,
       boxPadding: 6,
@@ -59,9 +61,15 @@ const sharedOptions = {
       }
     }
   }
-};
+});
 
 export function ProvinceBarChart({ data, labels }: { data: number[], labels: string[] }) {
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
+  
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && resolvedTheme === 'dark';
+
   const chartData = {
     labels,
     datasets: [
@@ -75,14 +83,18 @@ export function ProvinceBarChart({ data, labels }: { data: number[], labels: str
     ]
   };
 
+  const shared = getSharedOptions(isDark);
   const options = {
-    ...sharedOptions,
+    ...shared,
     scales: {
       y: {
         beginAtZero: true,
         grid: {
           display: true,
-          color: 'rgba(0,0,0,0.05)',
+          color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: isDark ? '#a1a1aa' : '#71717a', // zinc-400 or zinc-500
         },
         border: { display: false }
       },
@@ -92,25 +104,32 @@ export function ProvinceBarChart({ data, labels }: { data: number[], labels: str
         },
         border: { display: false },
         ticks: {
+          color: isDark ? '#a1a1aa' : '#71717a',
           maxRotation: 45,
           minRotation: 45
         }
       }
     },
     plugins: {
-      ...sharedOptions.plugins,
+      ...shared.plugins,
       legend: { display: false }
     }
   };
 
   return (
     <div className="relative h-72 w-full flex items-center justify-center">
-      <Bar data={chartData} options={options} />
+      <Bar key={isDark ? 'dark' : 'light'} data={chartData} options={options} />
     </div>
   );
 }
 
 export function OperatorDoughnutChart({ data, labels }: { data: number[], labels: string[] }) {
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
+  
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && resolvedTheme === 'dark';
+
   const chartData = {
     labels,
     datasets: [
@@ -123,20 +142,21 @@ export function OperatorDoughnutChart({ data, labels }: { data: number[], labels
           '#34C759', // Apple Green
           '#5AC8FA', // Apple Light Blue
         ],
-        borderWidth: 0,
+        borderWidth: isDark ? 2 : 0,
+        borderColor: isDark ? '#18181b' : undefined, // match dark card background so slices have gaps
         hoverOffset: 4,
       }
     ]
   };
 
   const options = {
-    ...sharedOptions,
+    ...getSharedOptions(isDark),
     cutout: '70%',
   };
 
   return (
     <div className="relative h-72 w-full flex items-center justify-center">
-      <Doughnut data={chartData} options={options} />
+      <Doughnut key={isDark ? 'dark' : 'light'} data={chartData} options={options} />
     </div>
   );
 }
