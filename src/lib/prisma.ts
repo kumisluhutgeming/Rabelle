@@ -1,5 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 
+// Monkey patch for BigInt serialization issue in Next.js/JSON
+if (typeof BigInt !== "undefined" && !(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+  };
+}
+
 const prismaClientSingleton = () => {
   return new PrismaClient().$extends({
     query: {

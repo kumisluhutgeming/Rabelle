@@ -43,6 +43,7 @@ model lokasi_pemancar {
   pengukuran         pengukuran[]
 
   @@index([location_id], map: "lokasi_pemancar_location_id_foreign")
+  @@index([latitude, longitude], map: "lokasi_pemancar_lat_lng_index")
 }
 
 model pengukuran {

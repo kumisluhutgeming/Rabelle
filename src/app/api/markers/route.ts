@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { EXCLUDED_JENIS } from '@/lib/constants';
 import { rateLimit } from '@/lib/rate-limit';
 import { getServerSession } from "next-auth";
@@ -63,31 +64,36 @@ export async function GET(request: Request) {
     });
 
     // 2. Get global counts for stable clusters (Ignoring viewport bounds)
-    // We group by province and kota to get stable totals
-    const globalStats = await prisma.pengukuran.groupBy({
-      by: ['location_id'],
-      where: baseWhere,
-      _count: { id: true },
-    });
+    // We use a raw query to join locations and group directly in the database
+    const queryRawParams = Prisma.sql`
+      SELECT 
+        l.provinsi, 
+        l.kota, 
+        CAST(COUNT(p.id) AS UNSIGNED) as total 
+      FROM pengukuran p
+      LEFT JOIN locations l ON p.location_id = l.id
+      LEFT JOIN stasiun_radio s ON p.stasiun_radio_id = s.id
+      WHERE 
+        s.jenis_komunikasi NOT IN (${Prisma.join(EXCLUDED_JENIS)})
+        ${jenis ? Prisma.sql`AND s.jenis_komunikasi = ${jenis}` : Prisma.empty}
+        ${operator ? Prisma.sql`AND s.nama_penyelenggara = ${operator}` : Prisma.empty}
+        ${provinsi ? Prisma.sql`AND l.provinsi = ${provinsi}` : Prisma.empty}
+        ${kota ? Prisma.sql`AND l.kota = ${kota}` : Prisma.empty}
+      GROUP BY l.provinsi, l.kota
+    `;
 
-    // Since we need city/province names for the counts, we fetch location names
-    const locationInfo = await prisma.locations.findMany({
-      where: { id: { in: globalStats.map(s => s.location_id).filter((id): id is bigint => id !== null) } },
-      select: { id: true, kota: true, provinsi: true }
-    });
+    const rawStats: any[] = await prisma.$queryRaw(queryRawParams);
 
     // Build the stats map
     const provinceStats: Record<string, number> = {};
     const kotaStats: Record<string, number> = {};
 
-    globalStats.forEach(stat => {
-      const loc = locationInfo.find(l => l.id === stat.location_id);
-      if (loc) {
-        const pName = loc.provinsi || 'Lainnya';
-        const kName = loc.kota || 'Lainnya';
-        provinceStats[pName] = (provinceStats[pName] || 0) + stat._count.id;
-        kotaStats[kName] = (kotaStats[kName] || 0) + stat._count.id;
-      }
+    rawStats.forEach(stat => {
+      const pName = stat.provinsi || 'Lainnya';
+      const kName = stat.kota || 'Lainnya';
+      const count = Number(stat.total);
+      provinceStats[pName] = (provinceStats[pName] || 0) + count;
+      kotaStats[kName] = (kotaStats[kName] || 0) + count;
     });
 
     const formattedMarkers = viewportMarkers.map(m => {

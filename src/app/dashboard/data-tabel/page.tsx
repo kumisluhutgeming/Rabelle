@@ -167,7 +167,9 @@ export default async function DataTabelPage({
                       {item.lokasi_pemancar?.latitude && item.lokasi_pemancar?.longitude ? (
                         <CoordinateCell 
                           lat={Number(item.lokasi_pemancar.latitude)} 
-                          lng={Number(item.lokasi_pemancar.longitude)} 
+                          lng={Number(item.lokasi_pemancar.longitude)}
+                          latStr={item.lokasi_pemancar.latitude.toString()}
+                          lngStr={item.lokasi_pemancar.longitude.toString()}
                         />
                       ) : (
                         <span className="text-muted-foreground">-</span>
