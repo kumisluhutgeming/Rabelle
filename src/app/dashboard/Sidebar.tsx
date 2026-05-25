@@ -93,7 +93,7 @@ export default function Sidebar({ session }: { session: any }) {
         `}
       >
         <div className={`flex items-center justify-between ${isSidebarCollapsed ? "p-3" : "p-6"}`}>
-          <Link href={session ? "/dashboard" : "/"} className="flex items-center gap-3 overflow-hidden whitespace-nowrap group">
+          <Link href="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap group">
             <div className="w-10 h-10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               {theme === "dark" ? (
                 <img src="/tacet-white.png" alt="Logo" className="w-full h-full object-contain" />

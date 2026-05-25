@@ -21,6 +21,8 @@ import * as turf from '@turf/helpers';
 import voronoi from '@turf/voronoi';
 import bbox from '@turf/bbox';
 import * as h3 from 'h3-js';
+import circle from '@turf/circle';
+import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 6371e3;
@@ -211,7 +213,7 @@ const CITY_CENTERS: Record<string, [number, number]> = {
 export default function MapComponentWebGL({ locations = [] }: { locations: any[] }) {
   const { isUiVisible } = useIdle();
   const searchParams = useSearchParams();
-  const { mapTheme, setMapTheme, coordFormat, signalUnit } = usePreferences();
+  const { mapTheme, setMapTheme, coordFormat, signalUnit, hexagonMode } = usePreferences();
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [fullCoverageData, setFullCoverageData] = useState<any[] | null>(null);
   const [isComputingCoverage, setIsComputingCoverage] = useState(false);
@@ -446,7 +448,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
     }
   }, [markers, showCoverage]);
 
-  const processMarkerCoverage = useCallback((m: any, hexMap: globalThis.Map<string, { dbm: number, level: string }>, allMarkers: any[]) => {
+  const processMarkerCoverage = useCallback((m: any, hexMap: globalThis.Map<string, { dbm: number, level: string }>, singlePolyMap: globalThis.Map<string, any>, allMarkers: any[], hexMode: string) => {
     const res = 9;
     const isTelco = m.jenis?.toLowerCase().includes('tele') || m.jenis?.toLowerCase().includes('seluler');
     const isRadio = m.jenis?.toLowerCase().includes('radio');
@@ -484,6 +486,27 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       
       const maxRad = calcMaxDistanceKm(freq!, hTower!, -110);
       
+      if (hexMode === 'single') {
+         // Outer ring (Weak/Red)
+         const polyOuter = circle([lng, lat], maxRad, {steps: 6, units: 'kilometers'});
+         polyOuter.properties = { dbm: -110, level: 'outer', id: m.id.toString() + '_outer' };
+         singlePolyMap.set(polyOuter.properties.id, polyOuter);
+
+         // Mid ring (Medium/Yellow)
+         const midRad = calcMaxDistanceKm(freq!, hTower!, -90);
+         const polyMid = circle([lng, lat], midRad, {steps: 6, units: 'kilometers'});
+         polyMid.properties = { dbm: -90, level: 'mid', id: m.id.toString() + '_mid' };
+         singlePolyMap.set(polyMid.properties.id, polyMid);
+
+         // Inner ring (Strong/Green)
+         const innerRad = calcMaxDistanceKm(freq!, hTower!, -70);
+         const polyInner = circle([lng, lat], innerRad, {steps: 6, units: 'kilometers'});
+         polyInner.properties = { dbm: -65, level: 'inner', id: m.id.toString() + '_inner' };
+         singlePolyMap.set(polyInner.properties.id, polyInner);
+         
+         return; // Skip grid disk calculations
+      }
+      
       const k = Math.min(25, Math.ceil(maxRad / 0.174));
       const rings = h3.gridDisk(centerHex, k);
       
@@ -517,6 +540,26 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       }
     } else {
       const radiusMultiplierKm = isTv ? 10 : (isRadio ? 5 : 1);
+
+      if (hexMode === 'single') {
+         // Outer
+         const polyOuter = circle([lng, lat], radiusMultiplierKm, {steps: 6, units: 'kilometers'});
+         polyOuter.properties = { dbm: -110, level: 'outer', id: m.id.toString() + '_outer' };
+         singlePolyMap.set(polyOuter.properties.id, polyOuter);
+
+         // Mid
+         const polyMid = circle([lng, lat], radiusMultiplierKm * 0.6, {steps: 6, units: 'kilometers'});
+         polyMid.properties = { dbm: -90, level: 'mid', id: m.id.toString() + '_mid' };
+         singlePolyMap.set(polyMid.properties.id, polyMid);
+
+         // Inner
+         const polyInner = circle([lng, lat], radiusMultiplierKm * 0.3, {steps: 6, units: 'kilometers'});
+         polyInner.properties = { dbm: -65, level: 'inner', id: m.id.toString() + '_inner' };
+         singlePolyMap.set(polyInner.properties.id, polyInner);
+
+         return;
+      }
+
       const k = Math.min(50, Math.ceil(radiusMultiplierKm / 0.174));
       const rings = h3.gridDisk(centerHex, k);
       
@@ -558,13 +601,14 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       );
       
       const hexMap = new globalThis.Map<string, { dbm: number, level: string }>();
+      const singlePolyMap = new globalThis.Map<string, any>();
       const chunkSize = 20; // Process 20 towers per frame
       
       for (let i = 0; i < validMarkers.length; i += chunkSize) {
         if (isCancelled) return;
         
         const chunk = validMarkers.slice(i, i + chunkSize);
-        chunk.forEach(m => processMarkerCoverage(m, hexMap, validMarkers));
+        chunk.forEach(m => processMarkerCoverage(m, hexMap, singlePolyMap, validMarkers, hexagonMode));
         
         setCoverageProgress(Math.round(((i + chunk.length) / validMarkers.length) * 100));
         
@@ -592,9 +636,13 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       });
 
       const data: any[] = [];
-      hexMap.forEach((val, hex) => {
-         data.push({ hex, dbm: val.dbm, level: val.level });
-      });
+      if (hexagonMode === 'single') {
+         singlePolyMap.forEach((val) => data.push(val));
+      } else {
+         hexMap.forEach((val, hex) => {
+            data.push({ hex, dbm: val.dbm, level: val.level });
+         });
+      }
       
       setFullCoverageData(data);
       setIsComputingCoverage(false);
@@ -623,76 +671,106 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
     );
     
     const hexMap = new globalThis.Map<string, { dbm: number, level: string }>();
-    validMarkers.forEach(m => processMarkerCoverage(m, hexMap, markers));
+    const singlePolyMap = new globalThis.Map<string, any>();
+    validMarkers.forEach(m => processMarkerCoverage(m, hexMap, singlePolyMap, markers, hexagonMode));
     
     const data: any[] = [];
-    hexMap.forEach((val, hex) => {
-       data.push({ hex, dbm: val.dbm, level: val.level });
-    });
+    if (hexagonMode === 'single') {
+       singlePolyMap.forEach((val) => data.push(val));
+    } else {
+       hexMap.forEach((val, hex) => {
+          data.push({ hex, dbm: val.dbm, level: val.level });
+       });
+    }
     return data;
-  }, [selectedPoint, showCoverage, processMarkerCoverage]);
+  }, [selectedPoint, showCoverage, processMarkerCoverage, hexagonMode]);
 
   // Switch between isolated view and full view without triggering recalculation of full map
   const coverageData = selectedPoint ? singleCoverageData : fullCoverageData;
 
   const deckLayers = useMemo(() => {
-    if (!showCoverage || renderMode !== 'point' || !coverageData) return [];
+    if (renderMode !== 'point') return [];
     
-    // Smooth zoom opacity fade
-    const zoomOpacity = viewState.zoom < 11 ? 0 : (viewState.zoom < 12 ? (viewState.zoom - 11) : 1);
-    if (zoomOpacity === 0) return [];
+    const layers = [];
     
-    // Single-tower mode: boost edge opacity so weak zones are visible against busy map
-    const isSingleMode = !!selectedPoint;
-    
-    return [
-      new H3HexagonLayer({
-        id: 'h3-hexagon-layer',
-        data: coverageData,
-        pickable: true,
-        wireframe: false,
-        filled: true,
-        extruded: true,
-        elevationScale: 6,
-        getHexagon: (d: any) => d.hex,
-        getFillColor: (d: any) => {
-           // Continuous linear interpolation: -60 dBm (peak) → -115 dBm (noise floor)
-           // Green → Yellow-Green → Amber → Orange → Magenta/Purple
-           // Purple at weak end avoids confusion with Indonesian red roof tiles
-           const t = Math.max(0, Math.min(1, (d.dbm - (-115)) / ((-60) - (-115))));
+    // 1. Draw Coverage (if enabled)
+    if (showCoverage && coverageData) {
+      // Smooth zoom opacity fade
+      const zoomOpacity = viewState.zoom < 11 ? 0 : (viewState.zoom < 12 ? (viewState.zoom - 11) : 1);
+      
+      if (zoomOpacity > 0) {
+        const isSingleMode = !!selectedPoint;
+        
+        const getColorForDbm = (dbm: number) => {
+           const t = Math.max(0, Math.min(1, (dbm - (-115)) / ((-60) - (-115))));
            let r, g, b;
            if (t > 0.6) {
-             // Strong: Emerald → Yellow-Green  (t: 0.6→1.0)
-             const s = (t - 0.6) / 0.4;
-             r = Math.round(16 + (1 - s) * (210 - 16));
-             g = Math.round(185 + (1 - s) * (220 - 185));
-             b = Math.round(129 * s);
+             r = 34; g = 197; b = 94; // Green
            } else if (t > 0.3) {
-             // Medium: Yellow-Green → Amber  (t: 0.3→0.6)
-             const s = (t - 0.3) / 0.3;
-             r = Math.round(210 + (1 - s) * (245 - 210));
-             g = Math.round(220 - (1 - s) * (220 - 158));
-             b = Math.round(11 * (1 - s));
+             r = 234; g = 179; b = 8; // Yellow
            } else {
-             // Weak: Amber → Magenta/Purple  (t: 0.0→0.3)
-             // Purple [139, 92, 246] is highly visible & absent from Indonesian landscapes
-             const s = t / 0.3;
-             r = Math.round(139 + s * (245 - 139));  // 139→245
-             g = Math.round(29 + s * (130 - 29));    // 29→130 (reduce greenish tint in amber)
-             b = Math.round(246 - s * (246 - 11));   // 246→11 (high blue in purple → amber)
+             r = 239; g = 68; b = 68; // Red
            }
-           // In single-tower mode, raise the alpha floor so edge (purple) hexes are clearly visible
-           const alphaFloor = isSingleMode ? 0.40 : 0.10;
-           const alpha = Math.round((alphaFloor + t * (0.95 - alphaFloor)) * 255 * zoomOpacity);
+           const alphaFloor = isSingleMode ? 0.40 : 0.15;
+           const alpha = Math.round((alphaFloor + t * (0.85 - alphaFloor)) * 255 * zoomOpacity);
            return [r, g, b, alpha];
-        },
-        getElevation: (d: any) => Math.max(0, d.dbm + 115), // Base elevation calculation
-        updateTriggers: {
-           getFillColor: [zoomOpacity, isSingleMode]
+        };
+
+        if (hexagonMode === 'single') {
+          layers.push(
+            new GeoJsonLayer({
+              id: 'geojson-coverage-layer',
+              data: coverageData,
+              pickable: true,
+              stroked: false,
+              filled: true,
+              extruded: false,
+              getFillColor: (d: any) => getColorForDbm(d.properties.dbm),
+              updateTriggers: { getFillColor: [zoomOpacity, isSingleMode] }
+            })
+          );
+        } else {
+          layers.push(
+            new H3HexagonLayer({
+              id: 'h3-hexagon-layer',
+              data: coverageData,
+              pickable: true,
+              wireframe: false,
+              filled: true,
+              extruded: true,
+              elevationScale: 6,
+              getHexagon: (d: any) => d.hex,
+              getFillColor: (d: any) => getColorForDbm(d.dbm),
+              getElevation: (d: any) => Math.max(0, d.dbm + 115),
+              updateTriggers: { getFillColor: [zoomOpacity, isSingleMode] }
+            })
+          );
         }
-      })
-    ];
-  }, [coverageData, showCoverage, renderMode, viewState.zoom, selectedPoint]);
+      }
+    }
+
+    // 2. Draw Points ON TOP of coverage (only when showCoverage is true, otherwise MapLibre draws them)
+    if (showCoverage) {
+       layers.push(
+         new ScatterplotLayer({
+           id: 'deck-point-layer',
+           data: markers.filter(m => m.lng !== undefined && m.lat !== undefined),
+           pickable: false, // MapLibre handles clicks via transparent fallback layer
+           getPosition: (d: any) => [Number(d.lng), Number(d.lat)],
+           getFillColor: [79, 70, 229, 255], // indigo-600
+           getLineColor: [255, 255, 255, 255],
+           lineWidthMinPixels: 2,
+           stroked: true,
+           radiusUnits: 'pixels',
+           getRadius: 5,
+           radiusMinPixels: 3,
+           radiusMaxPixels: 8,
+         })
+       );
+    }
+    
+    return layers;
+  }, [coverageData, showCoverage, renderMode, viewState.zoom, selectedPoint, hexagonMode, markers]);
 
   return (
     <div className="h-full w-full relative bg-slate-100 overflow-hidden">
@@ -775,7 +853,16 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
                 properties: { ...m }
               }))
           }}>
-            <Layer id="point-layer" type="circle" paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 15, 8], "circle-color": "#4f46e5", "circle-stroke-width": 2, "circle-stroke-color": "#ffffff" }} />
+            <Layer 
+              id="point-layer" 
+              type="circle" 
+              paint={{ 
+                "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 15, 8], 
+                "circle-color": showCoverage ? "transparent" : "#4f46e5", 
+                "circle-stroke-width": showCoverage ? 0 : 2, 
+                "circle-stroke-color": showCoverage ? "transparent" : "#ffffff" 
+              }} 
+            />
           </Source>
         )}
 
@@ -961,6 +1048,12 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
           <div className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter mb-0.5">Zoom</div>
           <div className="text-[11px] font-black text-indigo-600 font-mono">{zoomPercent}%</div>
         </div>
+        {showCoverage && hexagonMode === 'multi' && (
+          <div className="bg-background/95 border border-border px-3 py-2 shadow-2xl rounded-2xl text-center">
+            <div className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter mb-0.5">Skala</div>
+            <div className="text-[11px] font-black text-emerald-600 font-mono">1 Heksagon ≈ 174m</div>
+          </div>
+        )}
       </div>
     </div>
   );

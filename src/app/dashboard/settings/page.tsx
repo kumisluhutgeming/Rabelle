@@ -192,7 +192,7 @@ function GeneralSettings({ onSave }: { onSave: () => void }) {
 }
 
 function MapPreferences({ onSave }: { onSave: () => void }) {
-  const { mapTheme, setMapTheme, coordFormat, setCoordFormat, signalUnit, setSignalUnit } = usePreferences();
+  const { mapTheme, setMapTheme, coordFormat, setCoordFormat, signalUnit, setSignalUnit, hexagonMode, setHexagonMode } = usePreferences();
 
   return (
     <div className="space-y-8">
@@ -268,6 +268,30 @@ function MapPreferences({ onSave }: { onSave: () => void }) {
                 </button>
              </div>
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-4 border-t border-border">
+        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <MapIcon size={18} className="text-indigo-500" />
+          Visualisasi Sinyal
+        </h3>
+        <div className="space-y-3">
+           <label className="text-xs font-black text-muted-foreground uppercase tracking-widest">Mode Heksagon</label>
+           <div className="flex gap-2 p-1 bg-secondary/50 rounded-2xl w-fit">
+              <button 
+                onClick={() => setHexagonMode("multi")}
+                className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${hexagonMode === "multi" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Banyak Heksagon (Detail)
+              </button>
+              <button 
+                onClick={() => setHexagonMode("single")}
+                className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${hexagonMode === "single" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                1 Heksagon/Tower (Cakupan Maksimum)
+              </button>
+           </div>
         </div>
       </div>
     </div>
