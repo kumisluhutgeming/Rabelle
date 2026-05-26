@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model locations {
+  id              BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  kota            String            @unique(map: "locations_kota_unique") @db.VarChar(255)
+  provinsi        String?           @db.VarChar(255)
+  latitude        Decimal?          @db.Decimal(10, 7)
+  longitude       Decimal?          @db.Decimal(10, 7)
+  kode_wilayah    String?           @db.VarChar(255)
+  created_at      DateTime?         @db.Timestamp(0)
+  updated_at      DateTime?         @db.Timestamp(0)
+  lokasi_pemancar lokasi_pemancar[]
+  pengukuran      pengukuran[]
+  stasiun_radio   stasiun_radio[]
+
+  @@index([provinsi], map: "locations_provinsi_index")
+}
+
+model lokasi_pemancar {
+  id                 BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  latitude           Decimal      @db.Decimal(10, 7)
+  longitude          Decimal      @db.Decimal(10, 7)
+  alamat             String       @db.Text
+  kelurahan          String?      @db.VarChar(255)
+  kecamatan          String?      @db.VarChar(255)
+  telp_fax           String?      @db.VarChar(255)
+  tinggi_lokasi_mdpl Decimal?     @db.Decimal(8, 2)
+  tinggi_gedung_m    Decimal?     @db.Decimal(8, 2)
+  tinggi_menara_m    Decimal?     @db.Decimal(8, 2)
+  frekuensi          Int?
+  azimuths           String?      @db.VarChar(255)
+  location_id        BigInt       @db.UnsignedBigInt
+  created_at         DateTime?    @db.Timestamp(0)
+  updated_at         DateTime?    @db.Timestamp(0)
+  locations          locations    @relation(fields: [location_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "lokasi_pemancar_location_id_foreign")
+  pengukuran         pengukuran[]
+
+  @@index([location_id], map: "lokasi_pemancar_location_id_foreign")
+  @@index([latitude, longitude], map: "lokasi_pemancar_lat_lng_index")
+}
+
+model pengukuran {
+  id                 BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  stasiun_radio_id   BigInt?          @db.UnsignedBigInt
+  lokasi_pemancar_id BigInt?          @db.UnsignedBigInt
+  tanggal_pengukuran DateTime?        @db.Date
+  location_id        BigInt?          @db.UnsignedBigInt
+  created_at         DateTime?        @db.Timestamp(0)
+  updated_at         DateTime?        @db.Timestamp(0)
+  locations          locations?       @relation(fields: [location_id], references: [id], onUpdate: Restrict, map: "pengukuran_location_id_foreign")
+  lokasi_pemancar    lokasi_pemancar? @relation(fields: [lokasi_pemancar_id], references: [id], onUpdate: Restrict, map: "pengukuran_lokasi_pemancar_id_foreign")
+  stasiun_radio      stasiun_radio?   @relation(fields: [stasiun_radio_id], references: [id], onUpdate: Restrict, map: "pengukuran_stasiun_radio_id_foreign")
+
+  @@index([location_id], map: "pengukuran_location_id_foreign")
+  @@index([lokasi_pemancar_id], map: "pengukuran_lokasi_pemancar_id_foreign")
+  @@index([stasiun_radio_id], map: "pengukuran_stasiun_radio_id_foreign")
+}
+
+model stasiun_radio {
+  id                 BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  nama_penyelenggara String       @db.VarChar(255)
+  jenis_komunikasi   String?      @db.VarChar(255)
+  alamat             String?      @db.VarChar(255)
+  kelurahan          String?      @db.VarChar(255)
+  kecamatan          String?      @db.VarChar(255)
+  kota_madya         String?      @db.VarChar(255)
+  telp_fax           String?      @db.VarChar(255)
+  email              String?      @db.VarChar(255)
+  location_id        BigInt?      @db.UnsignedBigInt
+  created_at         DateTime?    @db.Timestamp(0)
+  updated_at         DateTime?    @db.Timestamp(0)
+  pengukuran         pengukuran[]
+  locations          locations?   @relation(fields: [location_id], references: [id], onUpdate: Restrict, map: "stasiun_radio_location_id_foreign")
+
+  @@index([location_id], map: "stasiun_radio_location_id_foreign")
+  @@index([nama_penyelenggara], map: "stasiun_radio_nama_penyelenggara_index")
+  @@index([jenis_komunikasi], map: "stasiun_radio_jenis_komunikasi_index")
+}
+
+model users {
+  id                BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  username          String     @unique(map: "users_username_unique") @db.VarChar(255)
+  name              String     @db.VarChar(255)
+  email             String     @unique(map: "users_email_unique") @db.VarChar(255)
+  email_verified_at DateTime?  @db.Timestamp(0)
+  password          String     @db.VarChar(255)
+  is_admin          Boolean    @default(false)
+  role              users_role @default(viewers)
+  remember_token    String?    @db.VarChar(100)
+  created_at        DateTime?  @db.Timestamp(0)
+  updated_at        DateTime?  @db.Timestamp(0)
+}
+
+enum users_role {
+  admin
+  viewers
+}
+
+model audit_logs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt?  @db.UnsignedBigInt
+  action     String   @db.VarChar(255)
+  details    String   @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
