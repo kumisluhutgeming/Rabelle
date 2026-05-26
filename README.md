@@ -106,6 +106,18 @@ Branch `v2` membawa pembaruan besar pada sisi antarmuka dan pengalaman pengguna 
 
 ---
 
+## 🚀 Versi 4.0 (Data Operations & Quality Assurance)
+
+Branch `v4` memperkenalkan kapabilitas operasional data tingkat lanjut dan otomatisasi pengujian E2E (End-to-End) komprehensif:
+
+- **E2E Test Automation**: Terintegrasi penuh dengan **Playwright** untuk memastikan stabilitas fitur dari sisi *User* maupun *Admin* (mencakup pendaftaran, manajemen data, hingga eksplorasi peta).
+- **Smart Data Import**: Fitur impor massal (*Bulk Import*) data infrastruktur via file `.csv` dengan pemetaan relasional otomatis yang cerdas.
+- **Manual Data Entry**: Panel form input manual terintegrasi dengan HTML5 Geolocation API untuk akurasi data wilayah.
+- **CSV Data Export**: Skrip utilitas bawaan untuk melakukan *export* atau migrasi seluruh data pengukuran beserta metadata wilayah dan operator ke dalam file `.csv`.
+- **Admin Sandbox**: Lingkungan aman bagi admin untuk menambah, memodifikasi, dan mengelola entitas relasional (*stasiun radio*, *lokasi pemancar*, dan *wilayah*) secara intuitif dari dalam *Dashboard*.
+
+---
+
 ## 📄 Lisensi
 Proyek ini dikembangkan untuk kebutuhan internal **Rabelle Intelligence**. Hak cipta © 2026.
 
