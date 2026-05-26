@@ -109,7 +109,7 @@ export default function DashboardPageClient({ stats }: { stats: any }) {
               <h3 className="text-sm font-bold">Tindakan Cepat</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { label: "Tambah Menara", icon: Plus, href: "/dashboard/edit-data/new", color: "bg-primary text-primary-foreground" },
+                  { label: "Tambah Menara", icon: Plus, href: "/dashboard/add-tower/manual", color: "bg-primary text-primary-foreground" },
                   { label: "Unduh CSV", icon: Download, href: "/dashboard/data-tabel", color: "bg-secondary text-secondary-foreground" },
                   { label: "Buka Peta", icon: MapIcon, href: "/dashboard/maps", color: "bg-secondary text-secondary-foreground" },
                   { label: "Riwayat Audit", icon: FileText, href: "/dashboard/audit", color: "bg-secondary text-secondary-foreground" },

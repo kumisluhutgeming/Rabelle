@@ -11,18 +11,16 @@ import {
   Map as MapIcon, 
   Table, 
   Settings, 
-  Home, 
   ChevronLeft, 
   ChevronRight, 
-  BarChart2, 
-  ClipboardList, 
-  Search, 
+  ChevronDown,
   History, 
   PlusCircle, 
-  Bell, 
   ShieldCheck,
   Menu,
-  X
+  X,
+  Upload,
+  PenTool
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -37,6 +35,15 @@ const NAV_GROUPS = [
   {
     label: "Sistem",
     items: [
+      { 
+        label: "Tambah Data", 
+        icon: PlusCircle, 
+        adminOnly: true,
+        subItems: [
+          { label: "Impor CSV", href: "/dashboard/add-tower/csv", icon: Upload },
+          { label: "Input Manual", href: "/dashboard/add-tower/manual", icon: PenTool }
+        ]
+      },
       { label: "Riwayat Audit", href: "/dashboard/audit", icon: History, adminOnly: true },
       { label: "Pengaturan", href: "/dashboard/settings", icon: Settings },
       { label: "Hak Akses", href: "/dashboard/permissions", icon: ShieldCheck, adminOnly: true },
@@ -48,6 +55,9 @@ export default function Sidebar({ session }: { session: any }) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    "Tambah Data": true // Default expanded
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -60,7 +70,15 @@ export default function Sidebar({ session }: { session: any }) {
 
   const opacityClass = isMapPage && !isUiVisible ? "opacity-0 pointer-events-none" : "opacity-100";
   const widthClass = isSidebarCollapsed ? "w-16" : "w-64";
-  const positionClass = isMapPage ? "fixed left-0 top-0 bottom-0" : "sticky top-0";
+
+  const toggleMenu = (label: string) => {
+    if (isSidebarCollapsed) {
+      setIsSidebarCollapsed(false);
+      setExpandedMenus(prev => ({ ...prev, [label]: true }));
+    } else {
+      setExpandedMenus(prev => ({ ...prev, [label]: !prev[label] }));
+    }
+  };
 
   if (!mounted) return null;
 
@@ -123,7 +141,7 @@ export default function Sidebar({ session }: { session: any }) {
           </div>
         </div>
 
-        <nav className="flex-grow py-4 px-3 overflow-y-auto space-y-6">
+        <nav className="flex-grow py-4 px-3 overflow-y-auto space-y-6 scrollbar-hide">
           {NAV_GROUPS.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-1">
               {!isSidebarCollapsed && (
@@ -134,12 +152,67 @@ export default function Sidebar({ session }: { session: any }) {
               <div className="space-y-1">
                 {group.items.map((item, itemIdx) => {
                   if (item.adminOnly && !isAdmin) return null;
-                  const isActive = pathname === item.href;
+                  const isActive = item.href ? pathname === item.href : item.subItems?.some(s => pathname === s.href);
+                  const isExpanded = expandedMenus[item.label];
+                  
+                  if (item.subItems) {
+                    return (
+                      <div key={itemIdx} className="space-y-1">
+                        <button
+                          onClick={() => toggleMenu(item.label)}
+                          className={`
+                            w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all group relative
+                            ${isActive && !isExpanded
+                              ? "bg-secondary/50 text-primary font-bold shadow-sm" 
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            }
+                          `}
+                          title={isSidebarCollapsed ? item.label : ""}
+                        >
+                          <div className="flex items-center gap-3">
+                            <item.icon size={18} className={`${isActive ? "text-primary" : "group-hover:text-foreground"} transition-colors`} />
+                            {!isSidebarCollapsed && (
+                              <span className="text-sm tracking-tight">{item.label}</span>
+                            )}
+                          </div>
+                          {!isSidebarCollapsed && (
+                            <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                          )}
+                        </button>
+                        
+                        {/* SubItems */}
+                        {isExpanded && !isSidebarCollapsed && (
+                          <div className="pl-9 pr-2 py-1 space-y-1">
+                            {item.subItems.map((sub, subIdx) => {
+                              const isSubActive = pathname === sub.href;
+                              return (
+                                <Link
+                                  key={subIdx}
+                                  href={sub.href}
+                                  className={`
+                                    flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-sm
+                                    ${isSubActive 
+                                      ? "bg-secondary text-primary font-medium shadow-sm" 
+                                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                    }
+                                  `}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                  {sub.icon && <sub.icon size={14} className={isSubActive ? "text-primary" : "opacity-70"} />}
+                                  <span>{sub.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
                   
                   return (
                     <Link
                       key={itemIdx}
-                      href={item.href}
+                      href={item.href as string}
                       className={`
                         flex items-center gap-3 px-3 py-2 rounded-xl transition-all group relative
                         ${isActive 
@@ -174,3 +247,4 @@ export default function Sidebar({ session }: { session: any }) {
     </>
   );
 }
+

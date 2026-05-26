@@ -49,3 +49,7 @@ next-env.d.ts
 
 # custom logs
 activity.log
+
+# local data exports
+*.csv
+tower_data_export.csv
