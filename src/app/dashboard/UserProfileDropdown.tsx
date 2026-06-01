@@ -113,7 +113,7 @@ export default function UserProfileDropdown({ session }: { session: any }) {
                 </div>
                 {session ? (
                   <button 
-                    onClick={() => signOut({ redirect: false })}
+                    onClick={() => signOut({ callbackUrl: "/login" })}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-all"
                   >
                     <LogOut size={16} />
