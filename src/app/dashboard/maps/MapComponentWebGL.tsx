@@ -163,7 +163,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
               const { freq, hTower } = getTowerParams(closest.id.toString());
               closest.dbm = calculateOkumuraHataDbm(minDiv, freq, hTower);
             } else {
-              const baseRadius = closest.jenis === "Televisi" ? 10000 : (closest.jenis === "Radio Siaran" ? 5000 : 1000);
+              const baseRadius = closest.jenis === "TV" ? 10000 : (closest.jenis === "Radio" ? 5000 : 1000);
               const normalized = Math.max(0, 1 - minDiv / baseRadius);
               closest.dbm = -110 + Math.round(normalized * 60);
             }
