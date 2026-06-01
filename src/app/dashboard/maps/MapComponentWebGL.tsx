@@ -50,7 +50,14 @@ const CITY_CENTERS: Record<string, [number, number]> = {
   "Kota Tangerang": [106.6319, -6.1783],
   "Kota Bekasi": [106.9756, -6.2383],
   "Kota Depok": [106.7942, -6.4025],
-  "Kota Bogor": [106.8166, -6.5950]
+  "Kota Bogor": [106.8166, -6.5950],
+  "Kota Surakarta": [110.8282, -7.5561],
+  "Kota Malang": [112.6304, -7.9797],
+  "Kota Tangerang Selatan": [106.7118, -6.2886],
+  "Kabupaten Banyuwangi": [114.3639, -8.2120],
+  "Kabupaten Sleman": [110.3392, -7.7126],
+  "Kabupaten Bantul": [110.3298, -7.8885],
+  "Kota Magelang": [110.2175, -7.4797]
 };
 
 export default function MapComponentWebGL({ locations = [] }: { locations: any[] }) {

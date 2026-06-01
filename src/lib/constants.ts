@@ -5,7 +5,7 @@ export const PROVINSI_LIST = [
   "Jawa Barat",
   "Jawa Tengah",
   "Jawa Timur",
-  "DI Jogja",
+  "DI Yogyakarta",
   "Bali",
 ] as const;
 
