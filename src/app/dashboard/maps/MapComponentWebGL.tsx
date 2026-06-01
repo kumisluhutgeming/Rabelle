@@ -69,10 +69,10 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
   });
 
   const [markers, setMarkers] = useState<any[]>([]);
-  const [stats, setStats] = useState<{province: Record<string, number>, kota: Record<string, number>}>({ province: {}, kota: {} });
+  const [stats, setStats] = useState<{ province: Record<string, number>, kota: Record<string, number> }>({ province: {}, kota: {} });
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<any | null>(null);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [nearestTower, setNearestTower] = useState<any | null>(null);
   const [showCoverage, setShowCoverage] = useState(false);
 
@@ -109,7 +109,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
 
       const kota = params.get('kota');
       const provinsi = params.get('provinsi');
-      
+
       if ((kota || provinsi) && newMarkers.length > 0) {
         const sumLat = newMarkers.reduce((sum: number, m: any) => sum + Number(m.lat), 0);
         const sumLng = newMarkers.reduce((sum: number, m: any) => sum + Number(m.lng), 0);
@@ -137,14 +137,14 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       alert("Geolokasi tidak didukung oleh browser Anda.");
       return;
     }
-    
+
     setIsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setIsLoading(false);
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
-        
+
         if (markers.length > 0) {
           let closest: any = null;
           let minDiv = Infinity;
@@ -158,7 +158,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
               closest = { ...m, distance: d };
             }
           });
-          
+
           if (closest) {
             if (closest.jenis?.toLowerCase().includes('tele') || closest.jenis?.toLowerCase().includes('seluler')) {
               const { freq, hTower } = getTowerParams(closest.id.toString());
@@ -166,7 +166,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
             } else {
               const baseRadius = closest.jenis === "Televisi" ? 10000 : (closest.jenis === "Radio Siaran" ? 5000 : 1000);
               const normalized = Math.max(0, 1 - minDiv / baseRadius);
-              closest.dbm = -110 + Math.round(normalized * 60); 
+              closest.dbm = -110 + Math.round(normalized * 60);
             }
             setNearestTower(closest);
           }
@@ -209,9 +209,9 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
         let coords: [number, number] | undefined = undefined;
         const loc = locations.find(l => l.kota === name);
         if (loc && loc.latitude && loc.longitude) {
-           coords = [Number(loc.longitude), Number(loc.latitude)];
+          coords = [Number(loc.longitude), Number(loc.latitude)];
         } else if (CITY_CENTERS[name]) {
-           coords = CITY_CENTERS[name];
+          coords = CITY_CENTERS[name];
         }
         if (!coords) return null;
         return { name, lng: coords[0], lat: coords[1], count };
@@ -222,8 +222,8 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
 
   const voronoiData = useMemo(() => {
     if (!showCoverage || markers.length === 0) return null;
-    const validMarkers = markers.filter(m => 
-      m.lng !== undefined && m.lat !== undefined && 
+    const validMarkers = markers.filter(m =>
+      m.lng !== undefined && m.lat !== undefined &&
       !isNaN(Number(m.lng)) && !isNaN(Number(m.lat))
     );
     const telcoMarkers = validMarkers.filter(m => m.jenis?.toLowerCase().includes('tele') || m.jenis?.toLowerCase().includes('seluler'));
@@ -251,7 +251,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       const box = bbox(points);
       const paddedBox: [number, number, number, number] = [box[0] - 0.5, box[1] - 0.5, box[2] + 0.5, box[3] + 0.5];
       const polygons = voronoi(points, { bbox: paddedBox });
-      
+
       if (polygons && polygons.features) {
         polygons.features = polygons.features.filter(f => f && f.geometry);
       }
@@ -265,63 +265,47 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
   const deckLayers = useMemo(() => {
     if (renderMode !== 'point') return [];
     const layers = [];
-    
+
     if (showCoverage && coverageData) {
       const zoomOpacity = viewState.zoom < 11 ? 0 : (viewState.zoom < 12 ? (viewState.zoom - 11) : 1);
       if (zoomOpacity > 0) {
+
+        // NAH, INI YANG TADI KETINGGALAN:
         const isSingleMode = !!selectedPoint;
-        
+
         const getColorForDbm = (dbm: number) => {
-           const t = Math.max(0, Math.min(1, (dbm - (-115)) / ((-60) - (-115))));
-           let r, g, b;
-           if (t > 0.6) { r = 34; g = 197; b = 94; } 
-           else if (t > 0.3) { r = 234; g = 179; b = 8; } 
-           else { r = 239; g = 68; b = 68; }
-           const alphaFloor = isSingleMode ? 0.40 : 0.15;
-           const alpha = Math.round((alphaFloor + t * (0.85 - alphaFloor)) * 255 * zoomOpacity);
-           return [r, g, b, alpha];
+          let r, g, b;
+          // Mapping warna
+          if (dbm <= -110) {
+            r = 239; g = 68; b = 68; // Merah
+          } else if (dbm <= -90) {
+            r = 234; g = 179; b = 8; // Kuning
+          } else {
+            r = 34; g = 197; b = 94; // Hijau
+          }
+
+          // Sekarang isSingleMode-nya udah ada, jadi nggak akan error lagi
+          const baseAlpha = isSingleMode ? 0.16 : 0.02;
+          const alpha = Math.round(baseAlpha * 255 * zoomOpacity);
+
+          return [r, g, b, alpha];
         };
 
-        if (hexagonMode === 'single') {
-          layers.push(
-            new GeoJsonLayer({
-              id: 'geojson-coverage-layer',
-              data: coverageData,
-              pickable: true,
-              stroked: false,
-              filled: true,
-              extruded: false,
-              getFillColor: ((d: any) => getColorForDbm(d.properties.dbm)) as any,
-              updateTriggers: {
-                getFillColor: [zoomOpacity, isSingleMode, coverageData]
-              }
-            })
-          );
-        } else {
-          layers.push(
-            new H3HexagonLayer({
-              id: 'h3-coverage-layer',
-              data: coverageData,
-              pickable: true,
-              wireframe: false,
-              filled: true,
-              extruded: true,
-              elevationScale: 5,
-              getHexagon: (d: any) => d.hex,
-              getFillColor: ((d: any) => getColorForDbm(d.dbm)) as any,
-              getElevation: (d: any) => {
-                const isInner = d.level === 'inner';
-                const isMid = d.level === 'mid';
-                const baseElev = isInner ? 50 : (isMid ? 20 : 5);
-                return baseElev * zoomOpacity;
-              },
-              updateTriggers: {
-                getFillColor: [zoomOpacity, isSingleMode, coverageData],
-                getElevation: [zoomOpacity, coverageData]
-              }
-            })
-          );
-        }
+        layers.push(
+          new GeoJsonLayer({
+            id: 'geojson-coverage-layer',
+            data: coverageData,
+            pickable: true,
+            stroked: false,
+            filled: true,
+            extruded: false,
+            getFillColor: ((d: any) => getColorForDbm(d.properties.dbm)) as any,
+            updateTriggers: {
+              // Pastikan isSingleMode juga masuk ke sini biar warnanya otomatis update pas di-klik
+              getFillColor: [zoomOpacity, isSingleMode, coverageData]
+            }
+          })
+        );
       }
     }
     return layers;
@@ -329,42 +313,54 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
 
   const maplibreglThemeUrl = (MAP_THEMES as any)[mapTheme]?.url || MAP_THEMES.voyager.url;
 
+  const transformRequest = useCallback((url: string) => {
+    if (url.includes("basemaps.cartocdn.com")) {
+      // Rewrite tiles-a/b/c/d or a/b/c/d subdomains to the main basemaps.cartocdn.com domain.
+      // This bypasses CORS issues on specific CDN edge nodes and prevents ad-blockers
+      // from blocking vector tiles requests (since they often block tiles-d/tiles-a subdomains).
+      const newUrl = url.replace(/https?:\/\/(tiles-[a-d]|[a-d])\.basemaps\.cartocdn\.com/, "https://basemaps.cartocdn.com");
+      return { url: newUrl };
+    }
+    return { url };
+  }, []);
+
   return (
     <div className="relative w-full h-full bg-slate-100 dark:bg-slate-900">
       <Map
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
+        transformRequest={transformRequest}
         mapStyle={maplibreglThemeUrl}
         maxZoom={18.4}
         minZoom={4.2}
         maxBounds={[[94.0, -11.0], [141.0, 6.0]]}
         interactiveLayerIds={renderMode === 'point' ? ['markers-point'] : undefined}
         onClick={(e) => {
-           if (renderMode === 'point') {
-             if (e.features && e.features.length > 0) {
-                const feature = e.features[0];
-                const markerData = markers.find(m => m.id.toString() === feature.properties?.id?.toString());
-                if (markerData) {
-                   setSelectedPoint(markerData);
-                }
-             } else {
-                setSelectedPoint(null);
-             }
-           } else {
-             setSelectedPoint(null);
-           }
+          if (renderMode === 'point') {
+            if (e.features && e.features.length > 0) {
+              const feature = e.features[0];
+              const markerData = markers.find(m => m.id.toString() === feature.properties?.id?.toString());
+              if (markerData) {
+                setSelectedPoint(markerData);
+              }
+            } else {
+              setSelectedPoint(null);
+            }
+          } else {
+            setSelectedPoint(null);
+          }
         }}
         cursor={renderMode === 'point' ? 'pointer' : 'grab'}
       >
         <NavigationControl position="bottom-right" />
         <FullscreenControl position="bottom-right" />
-        
+
         {renderMode === 'point' && <DeckGLOverlay layers={deckLayers} interleaved={true} />}
 
         {renderMode === 'point' && markers.length > 0 && (
-          <Source 
-            id="markers-source" 
-            type="geojson" 
+          <Source
+            id="markers-source"
+            type="geojson"
             data={{
               type: 'FeatureCollection',
               features: markers.filter(m => m.lng && m.lat).map(m => ({
@@ -374,7 +370,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
               }))
             }}
           >
-            <Layer 
+            <Layer
               id="markers-point"
               type="circle"
               paint={{
@@ -405,10 +401,10 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
         )}
 
         {renderMode !== 'point' && clusterData.map((cluster: any, idx: number) => (
-          <Marker 
-            key={`${renderMode}-${cluster.name}-${idx}`} 
-            longitude={cluster.lng} 
-            latitude={cluster.lat} 
+          <Marker
+            key={`${renderMode}-${cluster.name}-${idx}`}
+            longitude={cluster.lng}
+            latitude={cluster.lat}
             anchor="bottom"
             onClick={e => {
               e.originalEvent.stopPropagation();
@@ -474,7 +470,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
                   {formatCoordinate(selectedPoint.lat, true, selectedPoint.latStr)}, {formatCoordinate(selectedPoint.lng, false, selectedPoint.lngStr)}
                 </div>
               </div>
-              
+
               {(selectedPoint.hTower || selectedPoint.freq) && (
                 <div className="space-y-1.5 pt-2 border-t border-slate-100 bg-slate-50 p-2 rounded-lg border mt-2">
                   <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Spesifikasi Menara</div>
@@ -510,34 +506,34 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       </Map>
 
       <div className={`transition-opacity duration-300 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <CoverageProgressOverlay 
-          isComputingCoverage={isComputingCoverage} 
-          coverageProgress={coverageProgress} 
-        />
-        
-        <CheckSignalPanel 
-          userLocation={userLocation} 
-          nearestTower={nearestTower} 
-          signalUnit={signalUnit} 
-          onRefresh={handleCheckSignal} 
-          onClose={() => setUserLocation(null)} 
+        <CoverageProgressOverlay
+          isComputingCoverage={isComputingCoverage}
+          coverageProgress={coverageProgress}
         />
 
-        <MapStatsOverlay 
-          isLoading={isLoading} 
-          renderMode={renderMode} 
-          markersCount={markers.length} 
+        <CheckSignalPanel
+          userLocation={userLocation}
+          nearestTower={nearestTower}
+          signalUnit={signalUnit}
+          onRefresh={handleCheckSignal}
+          onClose={() => setUserLocation(null)}
+        />
+
+        <MapStatsOverlay
+          isLoading={isLoading}
+          renderMode={renderMode}
+          markersCount={markers.length}
         />
       </div>
 
-      <MapControls 
-        showCoverage={showCoverage} 
-        setShowCoverage={setShowCoverage} 
-        mapTheme={mapTheme} 
-        setMapTheme={setMapTheme} 
-        zoomPercent={zoomPercent} 
-        hexagonMode={hexagonMode} 
-        onCheckSignal={handleCheckSignal} 
+      <MapControls
+        showCoverage={showCoverage}
+        setShowCoverage={setShowCoverage}
+        mapTheme={mapTheme}
+        setMapTheme={setMapTheme}
+        zoomPercent={zoomPercent}
+        hexagonMode={hexagonMode}
+        onCheckSignal={handleCheckSignal}
         activeJenisFilter={searchParams.get('jenis')}
       />
     </div>

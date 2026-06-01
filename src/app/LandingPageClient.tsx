@@ -20,7 +20,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
   } as any;
-  
+
   const staggerContainer = {
     hidden: { opacity: 0 },
     visible: {
@@ -45,19 +45,19 @@ export default function LandingPageClient({ session, stats }: { session: any, st
               </div>
               <span className="font-bold text-xl tracking-tight text-foreground">Rabelle</span>
             </Link>
-            
+
             <div className="flex items-center gap-8">
               <div className="hidden md:flex items-center gap-8">
                 <Link href="#fitur" className="text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-[0.2em]">Fitur</Link>
                 <Link href="#cara-kerja" className="text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-[0.2em]">Cara Kerja</Link>
                 <Link href="/dashboard" className="text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-[0.2em]">Dashboard</Link>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <ThemeToggle />
                 <div className="w-px h-4 bg-border" />
                 {session ? (
-                  <button 
+                  <button
                     onClick={() => signOut({ callbackUrl: '/' })}
                     className="px-5 py-2.5 rounded-xl bg-secondary text-secondary-foreground font-bold text-[10px] hover:bg-muted transition-all uppercase tracking-widest"
                   >
@@ -77,7 +77,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
       {/* Hero Section */}
       <section className="relative pt-40 pb-24 lg:pt-56 lg:pb-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10 text-center">
-          <motion.div 
+          <motion.div
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
@@ -92,7 +92,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
               Petakan Infrastruktur <br />
               Digital Nasional <span className="text-primary/80">Secara Presisi.</span>
             </motion.h1>
-            
+
             <motion.p variants={fadeIn} className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
               Satu platform terpusat untuk memetakan, menganalisis, dan mengoptimalkan aset telekomunikasi di seluruh wilayah Indonesia. Dibangun untuk efisiensi profesional.
             </motion.p>
@@ -108,7 +108,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
           </motion.div>
 
           {/* Product Visual Actual Screenshot */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
@@ -118,7 +118,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
               <img src="/hero-actual.png" alt="Rabelle Actual Dashboard" className="w-full h-auto" />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
             </div>
-            
+
             {/* Floating Stats Decors */}
             <div className="absolute -top-10 -right-10 hidden xl:block">
               <div className="surface-card p-6 shadow-2xl border border-border animate-bounce-slow">
@@ -136,6 +136,64 @@ export default function LandingPageClient({ session, stats }: { session: any, st
         </div>
       </section>
 
+      {/* Operators / Partners Marquee */}
+      <section className="bg-white py-12 border-y border-border bg-background overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 mb-8">
+          <p className="text-[17px] font-bold text-muted-foreground uppercase tracking-[0.2em] text-center">
+            Memetakan Infrastruktur dari Penyelenggara Jaringan & Penyiaran
+          </p>
+        </div>
+
+        <div
+          className="flex w-full overflow-hidden relative"
+          style={{ maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)' }}
+        >
+          <motion.div
+            className="flex gap-16 items-center whitespace-nowrap w-max"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ repeat: Infinity, ease: "linear", duration: 70 }}
+          >
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="flex gap-20 items-center pr-20">
+                {[
+                  { name: 'Telkomsel', color: 'text-red-600', icon: 'Signal', logo: "/logos/Telkom_Indonesia.png" },
+                  { name: 'Indosat', color: 'text-yellow-500', icon: 'Globe', logo: "/logos/Indosat_Ooredoo_Hutchison.svg.png" },
+                  { name: 'XL Axiata', color: 'text-blue-600', icon: 'Zap', logo: "/logos/XL_logo_2014.png" },
+                  { name: 'Smartfren', color: 'text-pink-600', icon: 'Wifi', logo: "/logos/Smartfren_logo.svg.png" },
+                  { name: 'TVRI', color: 'text-blue-700', icon: 'Tv', logo: "/logos/Logo_TVRI_Klik.svg.png" },
+                  { name: 'RCTI', color: 'text-blue-600 border-b-4 border-red-600', icon: 'Tv', logo: "/logos/RCTI_logo_2015.svg.png" },
+                  { name: 'SCTV', color: 'text-orange-500', icon: 'Tv', logo: "/logos/SCTV_Logo.svg.png" },
+                  { name: 'Indosiar', color: 'text-red-500', icon: 'Tv', logo: "/logos/INDOSIAR_Logo.png" },
+                  { name: 'TransTV', color: 'text-sky-500', icon: 'Tv', logo: "/logos/Trans_TV_2001.svg.png" },
+                  { name: 'Metro TV', color: 'text-blue-800', icon: 'Tv', logo: "/logos/Metro_(MetroTV)_2023_logo.png" },
+                  { name: 'ANTV', color: 'text-red-600', icon: 'Tv', logo: "/logos/Antv.png" },
+                  { name: 'RTV', color: 'text-indigo-500', icon: 'Tv', logo: "/logos/Rajawali_Televisi.svg.png" }
+                ].map((operator, idx) => (
+                  <div key={idx} className="flex items-center justify-center transition-transform duration-500 hover:scale-110 shrink-0">
+                    {/* 1. Tambahkan shrink-0 dan min-w-max di sini agar teks/kontainer tidak menciut */}
+                    <div className="flex items-center gap-2 font-black text-2xl lg:text-3xl tracking-tighter shrink-0 min-w-max">
+                      {operator.logo ? (
+                        // 2. Buat div pembungkus khusus untuk background putih
+                        <div className="px-3 py-1.5 rounded-xl shadow-sm flex items-center justify-center shrink-0 min-w-max">
+                          <img
+                            src={operator.logo}
+                            alt={operator.name}
+                            // 3. Img jadi lebih clean, tinggi disesuaikan
+                            className="h-8 md:h-10 w-auto object-contain block shrink-0"
+                          />
+                        </div>
+                      ) : (
+                        <span className={`${operator.color} drop-shadow-sm whitespace-nowrap shrink-0`}>{operator.name}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* Problem -> Solution Section */}
       <section className="py-24 lg:py-40 bg-card/30" id="fitur">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
@@ -145,7 +203,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
                 <h2 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Tantangan Industri</h2>
                 <h3 className="text-4xl lg:text-5xl font-black tracking-tight leading-[1.1]">Mengapa Sulit Mengelola <br /> Infrastruktur Jaringan?</h3>
               </div>
-              
+
               <div className="space-y-10">
                 {[
                   { prob: "Data Terfragmentasi", sol: "Kami menyatukan ribuan titik data dari berbagai operator ke dalam satu repositori terpusat yang selalu mutakhir." },
@@ -206,7 +264,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
 
           <div className="grid md:grid-cols-3 gap-12 relative">
             <div className="absolute top-1/2 left-0 w-full h-px bg-border hidden md:block z-0" />
-            
+
             {[
               { step: "01", label: "Akses Dashboard", desc: "Masuk ke panel kendali utama untuk melihat gambaran umum sebaran infrastruktur secara nasional.", icon: Layout },
               { step: "02", label: "Filter Wilayah", desc: "Pilih provinsi, kota, atau operator spesifik untuk mempersempit fokus analisis Anda.", icon: Search },
@@ -255,7 +313,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
       {/* Final CTA Section */}
       <section className="py-32 lg:py-56 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10 text-center space-y-12">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -308,7 +366,7 @@ export default function LandingPageClient({ session, stats }: { session: any, st
           </div>
         </div>
       </footer>
-      
+
       <style jsx global>{`
         @keyframes bounce-slow {
           0%, 100% { transform: translateY(0); }
