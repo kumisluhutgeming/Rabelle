@@ -25,6 +25,21 @@ export const getBearing = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 };
 
+export const getDestination = (lat: number, lon: number, distanceKm: number, bearingDeg: number) => {
+  const R = 6371; // Earth radius in km
+  const lat1 = lat * Math.PI / 180;
+  const lon1 = lon * Math.PI / 180;
+  const brng = bearingDeg * Math.PI / 180;
+
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(distanceKm / R) +
+               Math.cos(lat1) * Math.sin(distanceKm / R) * Math.cos(brng));
+               
+  const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(distanceKm / R) * Math.cos(lat1),
+                       Math.cos(distanceKm / R) - Math.sin(lat1) * Math.sin(lat2));
+
+  return [lon2 * 180 / Math.PI, lat2 * 180 / Math.PI];
+};
+
 export const getAntennaAttenuation = (targetBearing: number, azimuths: number[], distanceMeters: number) => {
   if (!azimuths || azimuths.length === 0) return 0; // True omnidirectional for Radio/TV
   let minAtten = 20; 
