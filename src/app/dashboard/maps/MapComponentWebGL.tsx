@@ -8,8 +8,6 @@ import { GeoJsonLayer } from '@deck.gl/layers';
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import * as turf from '@turf/helpers';
-import voronoi from '@turf/voronoi';
-import bbox from '@turf/bbox';
 import { useSearchParams } from "next/navigation";
 import { MapPin, Navigation } from "lucide-react";
 
@@ -219,48 +217,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
     return [];
   }, [renderMode, stats, locations]);
 
-  const voronoiData = useMemo(() => {
-    if (!showCoverage || markers.length === 0) return null;
-    const validMarkers = markers.filter(m =>
-      m.lng !== undefined && m.lat !== undefined &&
-      !isNaN(Number(m.lng)) && !isNaN(Number(m.lat))
-    );
-    const telcoMarkers = validMarkers.filter(m => m.jenis?.toLowerCase().includes('tele') || m.jenis?.toLowerCase().includes('seluler'));
-    if (telcoMarkers.length < 3) return null;
-
-    try {
-      const seen = new Set();
-      const uniqueMarkers = telcoMarkers.filter(m => {
-        const key = `${m.lng},${m.lat}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-
-      const pointsArray = uniqueMarkers.map(m => turf.point([Number(m.lng), Number(m.lat)], { ...m }));
-
-      if (pointsArray.length === 1) {
-        pointsArray.push(turf.point([Number(uniqueMarkers[0].lng) + 10, Number(uniqueMarkers[0].lat) + 10]));
-        pointsArray.push(turf.point([Number(uniqueMarkers[0].lng) - 10, Number(uniqueMarkers[0].lat) - 10]));
-      } else if (pointsArray.length === 2) {
-        pointsArray.push(turf.point([Number(uniqueMarkers[0].lng) + 10, Number(uniqueMarkers[0].lat) - 10]));
-      }
-
-      const points = turf.featureCollection(pointsArray);
-      const box = bbox(points);
-      const paddedBox: [number, number, number, number] = [box[0] - 0.5, box[1] - 0.5, box[2] + 0.5, box[3] + 0.5];
-      const polygons = voronoi(points, { bbox: paddedBox });
-
-      if (polygons && polygons.features) {
-        polygons.features = polygons.features.filter(f => f && f.geometry);
-      }
-      return polygons;
-    } catch (e) {
-      console.error("Voronoi calculation error:", e);
-      return null;
-    }
-  }, [markers, showCoverage]);
-
   const deckLayers = useMemo(() => {
     if (renderMode !== 'point') return [];
     const layers = [];
@@ -372,21 +328,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
                 'circle-stroke-color': '#ffffff',
                 'circle-opacity': 1,
                 'circle-stroke-opacity': 1
-              }}
-            />
-          </Source>
-        )}
-
-        {showCoverage && voronoiData && renderMode === 'point' && (
-          <Source id="voronoi-source" type="geojson" data={voronoiData}>
-            <Layer
-              id="voronoi-lines"
-              type="line"
-              paint={{
-                'line-color': '#6366f1',
-                'line-width': 1.5,
-                'line-dasharray': [2, 2],
-                'line-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 11, 0.3, 14, 0.6]
               }}
             />
           </Source>
