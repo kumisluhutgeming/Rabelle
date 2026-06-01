@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Map, { Marker, Popup, NavigationControl, FullscreenControl, Source, Layer, useControl } from "react-map-gl/maplibre";
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { H3HexagonLayer } from '@deck.gl/geo-layers';
+
 import { GeoJsonLayer } from '@deck.gl/layers';
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -58,7 +58,7 @@ const CITY_CENTERS: Record<string, [number, number]> = {
 export default function MapComponentWebGL({ locations = [] }: { locations: any[] }) {
   const { isUiVisible } = useIdle();
   const searchParams = useSearchParams();
-  const { mapTheme, setMapTheme, coordFormat, signalUnit, hexagonMode } = usePreferences();
+  const { mapTheme, setMapTheme, coordFormat, signalUnit } = usePreferences();
 
   const [viewState, setViewState] = useState({
     longitude: 107.6098,
@@ -82,7 +82,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
   const { coverageData, isComputingCoverage, coverageProgress } = useSignalCoverage(
     markers,
     showCoverage,
-    hexagonMode,
     selectedPoint
   );
 
@@ -275,17 +274,11 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
 
         const getColorForDbm = (dbm: number) => {
           let r, g, b;
-          // Mapping warna
-          if (dbm <= -110) {
-            r = 239; g = 68; b = 68; // Merah
-          } else if (dbm <= -90) {
-            r = 234; g = 179; b = 8; // Kuning
-          } else {
-            r = 34; g = 197; b = 94; // Hijau
-          }
+          if (dbm <= -110) { r = 239; g = 68; b = 68; } // Merah
+          else if (dbm <= -90) { r = 234; g = 179; b = 8; } // Kuning
+          else { r = 34; g = 197; b = 94; } // Hijau
 
-          // Sekarang isSingleMode-nya udah ada, jadi nggak akan error lagi
-          const baseAlpha = isSingleMode ? 0.16 : 0.02;
+          const baseAlpha = isSingleMode ? 0.35 : 0.1;
           const alpha = Math.round(baseAlpha * 255 * zoomOpacity);
 
           return [r, g, b, alpha];
@@ -295,13 +288,12 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
           new GeoJsonLayer({
             id: 'geojson-coverage-layer',
             data: coverageData,
-            pickable: true,
+            pickable: false,
             stroked: false,
             filled: true,
             extruded: false,
             getFillColor: ((d: any) => getColorForDbm(d.properties.dbm)) as any,
             updateTriggers: {
-              // Pastikan isSingleMode juga masuk ke sini biar warnanya otomatis update pas di-klik
               getFillColor: [zoomOpacity, isSingleMode, coverageData]
             }
           })
@@ -309,7 +301,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
       }
     }
     return layers;
-  }, [renderMode, showCoverage, coverageData, viewState.zoom, selectedPoint, hexagonMode]);
+  }, [renderMode, showCoverage, coverageData, viewState.zoom, selectedPoint]);
 
   const maplibreglThemeUrl = (MAP_THEMES as any)[mapTheme]?.url || MAP_THEMES.voyager.url;
 
@@ -444,6 +436,7 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
             anchor="bottom"
             onClose={() => setSelectedPoint(null)}
             closeButton={false}
+            closeOnClick={false}
             offset={[0, -10]}
             className="z-[3000] rounded-2xl overflow-hidden shadow-2xl border-0"
             maxWidth="300px"
@@ -532,7 +525,6 @@ export default function MapComponentWebGL({ locations = [] }: { locations: any[]
         mapTheme={mapTheme}
         setMapTheme={setMapTheme}
         zoomPercent={zoomPercent}
-        hexagonMode={hexagonMode}
         onCheckSignal={handleCheckSignal}
         activeJenisFilter={searchParams.get('jenis')}
       />
