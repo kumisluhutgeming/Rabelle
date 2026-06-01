@@ -53,3 +53,6 @@ activity.log
 # local data exports
 *.csv
 tower_data_export.csv
+
+# scripts
+scripts/add-admin.js
