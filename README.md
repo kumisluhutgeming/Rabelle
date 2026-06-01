@@ -1,6 +1,8 @@
 # Rabelle — Geographic Intelligence Platform
 
-Rabelle adalah platform web untuk memetakan dan menganalisis infrastruktur telekomunikasi (BTS Seluler, Menara TV, dan Radio) di wilayah Jawa & Bali. Aplikasi ini mengambil data menara dari database MySQL, menampilkannya di peta interaktif berbasis WebGL (MapLibre + deck.gl), dan menyediakan dashboard analitik berupa grafik distribusi operator dan wilayah. Target penggunanya adalah analis telekomunikasi dan tim internal yang perlu memahami sebaran infrastruktur pemancar secara visual. Ini adalah aplikasi Next.js full-stack — satu codebase menangani UI, API, dan akses database.
+Rabelle adalah dashboard intelijen geografis untuk memetakan dan menganalisis infrastruktur telekomunikasi (BTS, TV, Radio) di wilayah Jawa dan Bali. Aplikasi ini dibangun untuk **Direktorat Jenderal Sumber Daya dan Perangkat Pos dan Informatika (SDPPI) Kementerian Kominfo** atau instansi sejenis yang membutuhkan visualisasi sebaran menara pemancar. Pengguna akhir adalah staf regulator/surveyor yang perlu melihat posisi tower di peta, memfilter berdasarkan operator/wilayah/jenis, mengimpor data baru dari CSV/GeoJSON, dan mensimulasikan radius jangkauan sinyal.
+
+Aplikasi ini berjalan sebagai **full-stack Next.js web app** (App Router) dengan MySQL sebagai database, MapLibre GL + Deck.GL untuk rendering peta WebGL, dan NextAuth untuk autentikasi.
 
 ---
 
@@ -9,55 +11,64 @@ Rabelle adalah platform web untuk memetakan dan menganalisis infrastruktur telek
 ```
 Browser
   │
-  ├─ Landing Page (/) ──── Server Component, fetch stats dari DB
+  ├─ Landing Page (/)            ← Publik, statistik tower
+  ├─ /login, /register           ← Autentikasi (NextAuth + Credentials)
   │
-  ├─ /login, /register ── Client Components (NextAuth credentials)
-  │
-  └─ /dashboard ────────── Protected area (session-gated)
-       │
-       ├─ Dashboard Home ── Server Component, fetch aggregasi data
-       ├─ Peta Interaktif ─ Client Component (MapLibre + deck.gl)
-       │    └─ fetch /api/markers (viewport-based, rate-limited)
-       ├─ Tabel Data ────── Server Component, paginated query
-       ├─ Tambah Data ───── Admin-only: CSV import atau manual form
-       ├─ Edit Data ──────── Admin-only: GeoJSON upload, GPS form
-       ├─ Audit Log ──────── Admin-only: immutable log viewer
-       └─ Settings ──────── Client Component (preferences + profile)
-```
+  └─ /dashboard/*                ← Dilindungi middleware (JWT check)
+       ├─ Overview (charts, stats)
+       ├─ /maps                  ← Peta WebGL (MapLibre + Deck.GL)
+       │    ├─ FloatingFilter     ← Filter cascading (jenis → operator, provinsi → kota)
+       │    ├─ MapComponentWebGL  ← Rendering marker + coverage layer
+       │    │    └─ useSignalCoverage hook  ← Okumura-Hata polygon generation
+       │    └─ MapControls       ← Theme switcher, coverage toggle
+       ├─ /data-tabel            ← CRUD tabel data pengukuran
+       ├─ /edit-data             ← Import GeoJSON + GPS manual entry
+       ├─ /add-tower/csv         ← Bulk import dari CSV (PapaParse)
+       ├─ /audit                 ← Audit log viewer (immutable)
+       └─ /settings              ← Preferensi peta (tema, format koordinat, satuan sinyal)
 
-**Data flow utama:**
-1. Data masuk ke MySQL via import CSV (`importTowers`), manual form (`saveGpsTower`), atau GeoJSON upload (`uploadGeojson`).
-2. Setiap entri melibatkan 4 tabel: `locations` → `stasiun_radio` → `lokasi_pemancar` → `pengukuran` (junction table).
-3. API `/api/markers` melayani peta — mengembalikan marker viewport + statistik global per provinsi/kota.
-4. Peta client menghitung simulasi sinyal (Okumura-Hata model) secara real-time di browser via `rf-propagation.ts`.
+API Routes:
+  /api/markers    ← GET: query marker dengan viewport bounds + filter
+  /api/auth/*     ← NextAuth internal routes
+  /api/kota       ← Lookup kota
+  /api/operators  ← Lookup operator
+
+Server Actions:
+  src/app/actions/import.ts   ← importTowers (CSV bulk)
+  src/app/actions/auth.ts     ← registerUser
+  src/app/dashboard/edit-data/actions.ts  ← uploadGeojson, saveGpsTower
+  src/app/dashboard/data-tabel/actions.ts ← deletePengukuran, exportCsv
+
+Data Flow:
+  MySQL ──Prisma ORM──► Server Components/Actions ──JSON──► Client Components
+                                                              │
+                                                              ▼
+                                                    MapLibre GL (basemap tiles)
+                                                    Deck.GL (coverage polygons)
+```
 
 ---
 
 ## Tech Stack
 
-| Teknologi | Versi | Peran dalam Proyek |
-|---|---|---|
-| **Next.js** | 16.2.4 | Framework utama — App Router, Server Components, Server Actions, API Routes |
-| **React** | 19.2.4 | UI rendering |
-| **TypeScript** | ^5 | Type safety seluruh codebase |
-| **Prisma** | 6.4.1 | ORM untuk MySQL — schema definition, query builder, migrations |
-| **MySQL** | — | Database utama (biasanya via XAMPP) |
-| **MapLibre GL** | ^5.24.0 | Rendering peta WebGL (open-source, tile-based) |
-| **react-map-gl** | ^8.1.1 | React wrapper untuk MapLibre |
-| **deck.gl** | ^9.3.2 | Visualisasi geospasial (H3 hexagons, GeoJSON layers, coverage overlay) |
-| **Turf.js** | ^7.3.5 | Geospatial computation — Voronoi diagram, bounding box, circle, sector |
-| **h3-js** | ^4.4.0 | Uber H3 hexagonal grid untuk visualisasi cakupan sinyal |
-| **Chart.js** | ^4.5.1 | Grafik analitik di dashboard (distribusi operator, wilayah) |
-| **NextAuth.js** | ^4.24.14 | Authentication — credentials provider (email/username + bcrypt password) |
-| **bcryptjs** | ^3.0.3 | Password hashing (kompatibel dengan hash Laravel) |
-| **Tailwind CSS** | ^4 | Styling utama (PostCSS plugin mode) |
-| **Framer Motion** | ^12.38.0 | Animasi UI (page transitions, modals, components) |
-| **Zod** | ^4.4.3 | Schema validation untuk form input (edit tower, GPS input) |
-| **react-hook-form** | ^7.75.0 | Form management (login, register, forgot password) |
-| **PapaParse** | ^5.5.3 | CSV parsing untuk bulk import |
-| **Lucide React** | ^1.14.0 | Icon library |
-| **Playwright** | ^1.60.0 | E2E testing framework |
-| **LRU Cache** | ^11.3.6 | In-memory rate limiting pada API routes |
+| Teknologi | Versi | Peran |
+|-----------|-------|-------|
+| **Next.js** | 16.2.4 | Framework fullstack. App Router, Server Components, Server Actions, Middleware. |
+| **React** | 19.2.4 | UI rendering. |
+| **TypeScript** | ^5 | Type safety di seluruh codebase. |
+| **MySQL** | — | Database utama. Skema sudah ada (`prisma/schema.prisma`), tidak ada migrasi file. |
+| **Prisma** | 6.4.1 | ORM. Singleton client di `src/lib/prisma.ts` dengan BigInt JSON monkey-patch. |
+| **NextAuth** | 4.x | Autentikasi. Credentials provider (username/email + bcrypt password). JWT sessions, 30 hari. |
+| **MapLibre GL** | ^5.24 | Rendering peta vektor (basemap tiles dari CARTO). |
+| **Deck.GL** | ^9.3 | WebGL overlay untuk coverage polygons (GeoJsonLayer) dan marker rendering. Hanya sub-packages: `@deck.gl/layers`, `@deck.gl/mapbox`, `@deck.gl/geo-layers`, `@deck.gl/react`. |
+| **Turf.js** | ^7.3 | Geospatial utilities — hanya `@turf/helpers` (polygon builder), `@turf/bbox`, `@turf/voronoi` (Voronoi tessellation). |
+| **Framer Motion** | ^12 | Animasi UI — sidebar, filter panel, transitions. |
+| **Chart.js + react-chartjs-2** | ^4.5 / ^5.3 | Grafik statistik di dashboard overview. |
+| **PapaParse** | ^5.5 | CSV parsing di browser untuk fitur import tower. |
+| **Zod** | ^4.4 | Validasi input pada Server Actions (`createSafeAction` wrapper). |
+| **React Hook Form** | ^7.75 | Form management di login, register, edit tower. |
+| **Tailwind CSS** | v4 | Utility-first CSS. Konfigurasi via `@tailwindcss/postcss`. |
+| **Playwright** | ^1.60 | E2E testing (Chromium). 6 spec files di `tests/e2e/`. |
 
 ---
 
@@ -65,16 +76,15 @@ Browser
 
 ### Prerequisites
 
-- **Node.js** v18+ (direkomendasikan v20+)
-- **MySQL** — bisa via XAMPP, MariaDB, atau MySQL Server standalone
-- **Git** — untuk clone repository
-- Browser modern (Chrome/Edge — dibutuhkan untuk WebGL map)
+- **Node.js** ≥ 18.x (direkomendasikan 20.x+)
+- **MySQL** 8.x yang sudah berjalan
+- **npm** (bawaan Node.js)
 
 ### 1. Clone & Install
 
 ```bash
-git clone <url-repository>
-cd Rabelle-Standalone
+git clone https://github.com/kumisluhutgeming/Rabelle.git
+cd Rabelle
 npm install
 ```
 
@@ -86,456 +96,382 @@ Salin `.env.example` menjadi `.env`:
 cp .env.example .env
 ```
 
-Edit `.env` — ada **3 variabel** yang harus diisi:
+Isi nilainya:
 
 ```env
-# Koneksi MySQL — sesuaikan user, password, host, port, dan nama database
-DATABASE_URL="mysql://root:@127.0.0.1:3306/rabelle"
+# Koneksi MySQL — sesuaikan username, password, host, dan nama database
+DATABASE_URL="mysql://root:password@127.0.0.1:3306/rabelle"
 
-# Secret untuk signing JWT session (generate random string yang panjang)
-NEXTAUTH_SECRET="ganti-dengan-string-random-minimal-32-karakter"
+# Secret untuk JWT session NextAuth — generate string random panjang
+NEXTAUTH_SECRET="ganti-dengan-string-random-panjang-minimal-32-karakter"
 
-# URL tempat aplikasi berjalan
+# URL aplikasi (untuk development)
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
-> **Catatan**: Jika pakai XAMPP default, `root` tanpa password sudah benar. Pastikan database bernama `rabelle` sudah dibuat di MySQL.
+> **Penting:** Database `rabelle` harus sudah dibuat sebelumnya di MySQL. Prisma akan membuat tabelnya.
 
 ### 3. Setup Database
 
-Pastikan MySQL sudah aktif, lalu push schema Prisma ke database:
-
 ```bash
+# Generate Prisma Client
+npx prisma generate
+
+# Push schema ke database (membuat semua tabel)
 npx prisma db push
 ```
 
-Ini akan membuat semua tabel (`locations`, `stasiun_radio`, `lokasi_pemancar`, `pengukuran`, `users`, `audit_logs`) secara otomatis.
+> **Catatan:** Proyek ini tidak menggunakan Prisma Migrate. Skema di-push langsung. Jika database sudah ada dari versi Laravel sebelumnya, Prisma akan introspect secara otomatis.
 
-### 4. Buat User Admin Pertama
-
-Edit file `scripts/add-admin.js` — ubah `NEW_ADMIN_DATA` sesuai kebutuhan, lalu jalankan:
+### 4. (Opsional) Buat Akun Admin
 
 ```bash
+# Edit kredensial di dalam file terlebih dahulu, lalu:
 node scripts/add-admin.js
 ```
 
-> **Penting**: File ini masuk `.gitignore` karena berisi password plaintext. Jangan commit.
+Atau daftar lewat `/register` — semua user baru otomatis berstatus `viewers`. Ubah `is_admin` ke `true` secara manual di database jika perlu.
 
-### 5. Jalankan Aplikasi
+### 5. Jalankan Development Server
 
 ```bash
 npm run dev
 ```
 
-Atau double-click `start_rabelle.bat` (Windows).
+Atau di Windows, double-click `start_rabelle.bat`.
 
 ### 6. Verifikasi
 
-1. Buka `http://localhost:3000` — landing page harus muncul dengan statistik (0 data jika database kosong).
-2. Klik "Masuk" → login dengan kredensial admin yang dibuat di langkah 4.
-3. Dashboard harus tampil dengan sidebar navigasi.
-4. Navigasi ke "Peta Interaktif" — peta MapLibre harus load (tile dari CartoDB CDN).
+1. Buka `http://localhost:3000` — Landing page harus muncul dengan statistik tower.
+2. Klik "Masuk ke Dashboard" → Login dengan akun yang dibuat.
+3. Navigasi ke "Peta" → Marker tower harus muncul di peta Jawa-Bali.
+4. Jika database masih kosong, impor data via "Import CSV" atau "Edit Data > GeoJSON".
 
 ---
 
 ## Struktur Folder
 
 ```
-Rabelle-Standalone/
+d:\Rabelle-Standalone\
 ├── prisma/
-│   └── schema.prisma          # ← PENTING: Definisi semua tabel database
-│
+│   └── schema.prisma          # Definisi semua tabel: locations, lokasi_pemancar,
+│                               # pengukuran, stasiun_radio, users, audit_logs
 ├── public/
-│   ├── logo.png               # Logo Rabelle (light mode)
-│   ├── tacet-white.png        # Logo (dark mode)
-│   ├── hero-actual.png        # Hero image landing page
-│   ├── logos/                  # Logo-logo operator telekomunikasi
-│   └── previews/              # Screenshot tema peta (untuk halaman Settings)
+│   ├── logo.png               # Logo untuk light mode
+│   ├── tacet-white.png        # Logo untuk dark mode
+│   └── logos/                 # Logo operator telekomunikasi
 │
 ├── scripts/
-│   ├── add-admin.js           # Script CLI untuk membuat user admin baru
-│   ├── export-csv.js          # Script CLI untuk export seluruh data ke CSV
-│   └── seed_rf_data.js        # Script untuk generate data RF (frekuensi, azimuth, tinggi) ke tower telco
+│   ├── add-admin.js           # Script CLI untuk membuat akun admin
+│   ├── export-csv.js          # Script CLI untuk export data ke CSV
+│   └── seed_rf_data.js        # Script untuk seed data RF (frekuensi, tinggi, azimuth)
+│                               # ke tabel lokasi_pemancar
 │
 ├── src/
+│   ├── middleware.ts           # NextAuth middleware: proteksi /dashboard/*,
+│   │                           # rate limiting in-memory untuk /login, /api/markers
+│   │
 │   ├── app/
-│   │   ├── layout.tsx         # Root layout — ThemeProvider, AuthProvider, font loading
-│   │   ├── page.tsx           # Landing page — server component, fetch stats
-│   │   ├── LandingPageClient.tsx  # Landing page client component (animasi, hero, stats cards)
-│   │   ├── globals.css        # Design system — CSS variables, light/dark theme tokens, primitives
+│   │   ├── layout.tsx          # Root layout: font (Plus Jakarta Sans), ThemeProvider, AuthProvider
+│   │   ├── page.tsx            # Landing page server component (fetch stats)
+│   │   ├── LandingPageClient.tsx  # Landing page UI (animasi, hero, fitur)
+│   │   ├── globals.css         # CSS variables untuk theming (light/dark)
 │   │   │
-│   │   ├── login/page.tsx     # Halaman login (split-screen design)
-│   │   ├── register/page.tsx  # Halaman registrasi
-│   │   ├── forgot-password/page.tsx  # Halaman lupa password (⚠️ BELUM FUNGSIONAL)
+│   │   ├── login/page.tsx      # Halaman login (react-hook-form + zod)
+│   │   ├── register/page.tsx   # Halaman registrasi
+│   │   ├── forgot-password/    # Halaman lupa password (UI only, belum ada backend)
 │   │   │
 │   │   ├── actions/
-│   │   │   ├── auth.ts        # Server action: registerUser()
-│   │   │   └── import.ts      # Server action: importTowers() — bulk CSV import
+│   │   │   ├── auth.ts         # Server Action: registerUser
+│   │   │   └── import.ts       # Server Action: importTowers (CSV bulk import)
 │   │   │
 │   │   ├── api/
-│   │   │   ├── auth/[...nextauth]/  # NextAuth API handler
-│   │   │   ├── markers/route.ts     # ← PENTING: API utama untuk peta — GET markers + stats
-│   │   │   ├── kota/route.ts        # Autocomplete search kota
-│   │   │   └── operators/route.ts   # Autocomplete search operator
+│   │   │   ├── auth/           # NextAuth route handler (auto-generated)
+│   │   │   ├── markers/route.ts # GET endpoint utama peta: query tower + stats
+│   │   │   ├── kota/           # Lookup kota
+│   │   │   └── operators/      # Lookup operator
 │   │   │
 │   │   └── dashboard/
-│   │       ├── layout.tsx     # Dashboard shell — Sidebar, Header, IdleProvider, PreferencesProvider
-│   │       ├── page.tsx       # Dashboard home — aggregasi stats (count BTS, TV, Radio, top operators)
-│   │       ├── DashboardPageClient.tsx  # Client: render stats cards + charts
-│   │       ├── Sidebar.tsx    # ← PENTING: Definisi navigasi (NAV_GROUPS), role-based menu
-│   │       ├── CommandPalette.tsx  # CMD+K command palette (navigasi cepat)
-│   │       ├── DashboardHeader.tsx # Top bar: search, notifications, user dropdown
-│   │       ├── IdleProvider.tsx    # Auto-hide UI saat idle di halaman peta
-│   │       ├── PreferencesProvider.tsx  # Context: mapTheme, coordFormat, signalUnit, hexagonMode
+│   │       ├── layout.tsx      # Dashboard shell: Sidebar + Header + Providers
+│   │       ├── page.tsx        # Overview: statistik, chart, top operators
+│   │       ├── Sidebar.tsx     # Navigasi utama (collapsible)
+│   │       ├── DashboardHeader.tsx
+│   │       ├── CommandPalette.tsx  # ⌘K command palette (navigasi cepat)
+│   │       ├── IdleProvider.tsx    # Auto-hide UI setelah idle 5 detik
+│   │       ├── PreferencesProvider.tsx # Konteks preferensi: tema peta, format koordinat, unit sinyal
 │   │       │
 │   │       ├── maps/
-│   │       │   ├── page.tsx             # Server component: fetch metadata untuk filter
-│   │       │   ├── MapComponentWebGL.tsx # ← PENTING: Komponen peta utama (542 baris)
-│   │       │   ├── FloatingFilter.tsx   # Panel filter cascading (jenis → provinsi → kota → operator)
-│   │       │   ├── MapWrapper.tsx       # Dynamic import wrapper (ssr: false)
-│   │       │   ├── components/
-│   │       │   │   ├── CheckSignalPanel.tsx      # Panel "Cek Sinyal Saya" (geolocation + nearest tower)
-│   │       │   │   ├── CoverageProgressOverlay.tsx # Progress bar saat computing signal coverage
-│   │       │   │   ├── MapControls.tsx            # Tombol kontrol (coverage toggle, theme, zoom)
-│   │       │   │   └── MapStatsOverlay.tsx        # Badge stats (jumlah marker terlihat)
-│   │       │   └── hooks/
-│   │       │       └── useSignalCoverage.ts       # ← PENTING: Hook komputasi H3 hexagon coverage
+│   │       │   ├── page.tsx           # Server component: fetch filter metadata
+│   │       │   ├── MapWrapper.tsx     # Dynamic import (SSR disabled) untuk MapComponentWebGL
+│   │       │   ├── MapComponentWebGL.tsx  # ★ KOMPONEN UTAMA PETA — 500+ baris
+│   │       │   │                          # Rendering marker, coverage, popup, Voronoi,
+│   │       │   │                          # cluster (province/kota/point modes), geolocation
+│   │       │   ├── FloatingFilter.tsx # Panel filter cascading dengan SearchableSelect
+│   │       │   ├── hooks/
+│   │       │   │   └── useSignalCoverage.ts  # ★ CORE LOGIC: Okumura-Hata → hexagon polygon
+│   │       │   └── components/
+│   │       │       ├── MapControls.tsx          # Tombol coverage, theme switcher, zoom indicator
+│   │       │       ├── CheckSignalPanel.tsx     # Panel cek sinyal (geolokasi user)
+│   │       │       ├── CoverageProgressOverlay.tsx # Progress bar saat menghitung coverage
+│   │       │       └── MapStatsOverlay.tsx      # Overlay statistik marker
 │   │       │
 │   │       ├── data-tabel/
-│   │       │   ├── page.tsx         # Tabel data utama — server component, paginated
-│   │       │   ├── actions.ts       # Server actions: deleteTowerData(), exportCsvData()
-│   │       │   ├── TableFilter.tsx  # Filter + search bar
-│   │       │   ├── Pagination.tsx   # Komponen pagination
-│   │       │   ├── ActionButtons.tsx # Tombol Edit/Delete per row (admin only)
-│   │       │   ├── ExportButton.tsx # Download CSV button
-│   │       │   ├── CoordinateCell.tsx # Cell koordinat (copy-to-clipboard)
-│   │       │   └── [id]/edit/       # Halaman edit single tower
-│   │       │
-│   │       ├── add-tower/
-│   │       │   ├── csv/page.tsx     # Halaman import CSV (admin only)
-│   │       │   └── manual/page.tsx  # Halaman input manual + geolocation (admin only)
+│   │       │   ├── page.tsx           # Tabel data pengukuran (server-side pagination)
+│   │       │   ├── actions.ts         # Server Actions: delete, export CSV
+│   │       │   ├── TableFilter.tsx    # Filter tabel (jenis, operator, wilayah)
+│   │       │   ├── Pagination.tsx     # Komponen paginasi
+│   │       │   ├── ExportButton.tsx   # Tombol export ke CSV
+│   │       │   └── [id]/edit/        # Edit satu entri pengukuran
 │   │       │
 │   │       ├── edit-data/
-│   │       │   ├── page.tsx         # Panel admin: GeoJSON upload + GPS form
-│   │       │   └── actions.ts       # Server actions: uploadGeojson(), saveGpsTower()
+│   │       │   ├── page.tsx           # Form import GeoJSON + GPS manual
+│   │       │   └── actions.ts         # Server Actions: uploadGeojson, saveGpsTower
 │   │       │
-│   │       ├── audit/page.tsx       # Audit log viewer (admin only, redirect kalau bukan admin)
-│   │       └── settings/page.tsx    # Settings page: profil, preferensi peta, API keys, security
+│   │       ├── add-tower/
+│   │       │   ├── csv/page.tsx       # Import bulk CSV (PapaParse preview + confirm)
+│   │       │   └── manual/           # Form tambah tower manual
+│   │       │
+│   │       ├── audit/page.tsx         # Log audit (immutable, readonly)
+│   │       └── settings/page.tsx      # Pengaturan preferensi peta
 │   │
 │   ├── components/
-│   │   ├── AuthProvider.tsx   # SessionProvider wrapper (next-auth/react)
-│   │   ├── ThemeProvider.tsx  # Custom theme context (light/dark/system) — localStorage persistence
-│   │   └── ThemeToggle.tsx    # Toggle button light/dark
+│   │   ├── AuthProvider.tsx    # SessionProvider wrapper untuk NextAuth
+│   │   ├── ThemeProvider.tsx   # Dark/light mode (localStorage + CSS variables)
+│   │   └── ThemeToggle.tsx     # Toggle button tema
 │   │
 │   ├── lib/
-│   │   ├── prisma.ts          # ← PENTING: Prisma client singleton + BigInt serialization fix + audit immutability
-│   │   ├── auth.ts            # NextAuth config — CredentialsProvider, JWT callbacks, session strategy
-│   │   ├── rf-propagation.ts  # ← PENTING: Model propagasi RF (Okumura-Hata), antenna pattern, frequency mapping
-│   │   ├── tower.ts           # Helper: upsertLocation(), revalidateTowerPaths()
-│   │   ├── audit.ts           # Helper: createAuditLog() — write ke tabel audit_logs
-│   │   ├── constants.ts       # PROVINSI_LIST, EXCLUDED_JENIS, TOWER_REVALIDATE_PATHS
-│   │   ├── rate-limit.ts      # In-memory rate limiter (LRU cache, 50 req/min/IP)
-│   │   └── activity-logger.ts # File-based activity logger (menulis ke activity.log) — jarang dipakai
+│   │   ├── auth.ts             # NextAuth config: CredentialsProvider, JWT callbacks
+│   │   ├── prisma.ts           # Prisma singleton + BigInt serialization + audit immutability
+│   │   ├── constants.ts        # PROVINSI_LIST, EXCLUDED_JENIS, TOWER_REVALIDATE_PATHS
+│   │   ├── tower.ts            # upsertLocation, revalidateTowerPaths
+│   │   ├── audit.ts            # createAuditLog helper
+│   │   ├── rf-propagation.ts   # ★ CORE MATH: Haversine distance, Okumura-Hata path loss,
+│   │   │                       #   bearing, getDestination, antenna attenuation,
+│   │   │                       #   operator frequency mapping, tower parameter generation
+│   │   └── middleware/
+│   │       └── action-wrapper.ts  # createSafeAction: auth + zod validation + audit logging
 │   │
 │   └── types/
-│       └── next-auth.d.ts     # Type augmentation untuk NextAuth session (id, username, isAdmin)
+│       └── next-auth.d.ts      # Type augmentation: Session.user.{username, isAdmin}
 │
-├── tests/e2e/
-│   ├── auth.spec.ts           # Test login, register, logout
-│   ├── user-journey.spec.ts   # Test user workflow: login → dashboard → maps → data table
-│   ├── admin-journey.spec.ts  # Test admin workflow: login → audit → add tower → edit data
-│   ├── add-tower.spec.ts      # Test CSV import dan manual tower entry
-│   └── map.spec.ts            # Test map page loading
+├── tests/e2e/                  # Playwright E2E tests
+│   ├── auth.spec.ts            # Login, register, protected route tests
+│   ├── admin-journey.spec.ts   # Admin workflow tests
+│   ├── user-journey.spec.ts    # Viewer workflow tests
+│   ├── map.spec.ts             # Map loading test
+│   ├── add-tower.spec.ts       # CSV import tests
+│   └── middleware.spec.ts      # Middleware rate limiting + auth protection tests
 │
-├── theme/                     # (Kosong atau berisi asset tema — tidak signifikan)
-├── .env.example               # Template environment variables
-├── .env.test                  # Environment untuk Playwright tests (database: rabelle_test)
-├── playwright.config.ts       # Konfigurasi E2E test
-├── start_rabelle.bat          # Windows shortcut: npm run dev
-├── download.ps1               # Script PowerShell untuk download sesuatu (utility, bukan bagian core)
-├── download_logos.js           # Script download logo operator (utility one-time)
-└── tower_data_export.csv      # Contoh output dari scripts/export-csv.js (ada di .gitignore)
+├── .env.example                # Template environment variables
+├── .env.test                   # Environment untuk Playwright tests
+├── playwright.config.ts        # Playwright config: Chromium, baseURL localhost:3000
+├── start_rabelle.bat           # Windows shortcut untuk npm run dev
+└── tower_data_export.csv       # Contoh data export (159KB, ~2000+ rows)
 ```
 
 ---
 
-## Fitur yang Sudah Ada & Berfungsi
+## Fitur yang Sudah Berjalan
 
-### Authentication
-- ✅ Login via email ATAU username (dengan bcrypt hash — kompatibel dengan hash dari Laravel)
-- ✅ Register user baru (validasi duplikat email/username)
-- ✅ JWT-based session (30 hari expiry)
-- ✅ Role-based access: `admin` dan `viewers`
-- ✅ Protected routes (redirect ke `/login` jika belum auth)
+### Autentikasi & Otorisasi
+- Login via username atau email + password (bcrypt, kompatibel hash Laravel)
+- Registrasi user baru (otomatis role `viewers`)
+- JWT session berlaku 30 hari
+- Middleware proteksi `/dashboard/*` — redirect ke `/login` jika belum login
+- Rate limiting in-memory (50 req/menit) untuk `/login`, `/register`, `/api/markers`
+- Dua role: `admin` (CRUD penuh) dan `viewers` (read-only)
 
-### Peta Interaktif (`/dashboard/maps`)
-- ✅ Peta WebGL dengan MapLibre GL + react-map-gl
-- ✅ 4 tema peta: Colorful, Voyager, Dark, Satellite (semua dari CartoDB tiles)
-- ✅ Smart clustering: zoom rendah → kluster per provinsi, zoom sedang → per kota, zoom tinggi → titik individual
-- ✅ Floating filter panel: cascading filter jenis → provinsi → kota → operator
-- ✅ Popup detail saat klik marker (nama operator, jenis, koordinat, spesifikasi menara)
-- ✅ Simulasi cakupan sinyal (toggle on/off):
-  - Model Okumura-Hata untuk kalkulasi path loss
-  - Visualisasi hexagonal (H3) atau Voronoi diagram
-  - Warna gradasi: hijau (kuat) → kuning (sedang) → merah (lemah)
-- ✅ "Cek Sinyal Saya": gunakan geolocation browser → cari menara terdekat → tampilkan estimasi kuat sinyal
-- ✅ Auto-hide UI saat idle di halaman peta (IdleProvider)
-- ✅ Rate limiting pada API markers (50 req/min/IP via LRU cache)
-- ✅ Format koordinat switchable: Decimal ↔ DMS
-- ✅ Unit sinyal switchable: Persentase ↔ dBm
+### Peta Interaktif
+- Rendering ribuan marker tower via MapLibre GL + source GeoJSON (bukan DOM markers)
+- 3 level zoom: **Province cluster** → **Kota cluster** → **Individual markers**
+- Filter cascading: Jenis Komunikasi → Operator, Provinsi → Kota
+- 4 tema peta: Colorful (CARTO Voyager GL), Voyager (Positron), Dark, Satellite (Esri)
+- Popup detail tower saat klik marker
+- Simulasi cek sinyal: geolokasi user → cari tower terdekat → hitung dBm via Okumura-Hata
 
-### Dashboard Analitik (`/dashboard`)
-- ✅ Statistik ringkasan: total tower, BTS, TV, Radio
-- ✅ Grafik top 5 operator (by jumlah stasiun radio)
-- ✅ Grafik top 10 kota (by jumlah pengukuran)
+### Visualisasi Coverage Sinyal
+- Toggle on/off visualisasi radius cakupan sinyal
+- 3 lapis heksagon per tower: Hijau (-70 dBm), Kuning (-90 dBm), Merah (-110 dBm)
+- Radius dihitung berdasarkan model **Okumura-Hata** yang mempertimbangkan: frekuensi (MHz), tinggi menara (m), daya pancar (dBm)
+- Orientasi heksagon mengikuti azimuth pertama dari data tower
+- Mode single tower (klik 1 tower) dan mode all towers
+- Diagram Voronoi untuk wilayah cakupan telco (dashed lines)
+- Progress bar saat menghitung coverage untuk banyak tower
 
-### Data Management (Admin Only)
-- ✅ Tabel data dengan pagination server-side (10 item/halaman)
-- ✅ Filter + search pada tabel (by jenis, provinsi, kota, operator, teks bebas)
-- ✅ Export data ke CSV (sesuai filter aktif)
-- ✅ Delete data tower (dengan cascade cleanup: hapus pengukuran → cek & hapus stasiun_radio/lokasi_pemancar jika orphan)
-- ✅ Edit data tower individual (`/dashboard/data-tabel/[id]/edit`)
-- ✅ Import bulk via CSV (`/dashboard/add-tower/csv`) — PapaParse parsing, relational mapping otomatis
-- ✅ Input manual tower (`/dashboard/add-tower/manual`) — form + HTML5 Geolocation API
-- ✅ Upload GeoJSON (`/dashboard/edit-data`) — parsing geometry (Point, Polygon, LineString), dedup by coordinate proximity
-- ✅ GPS-based tower entry (`/dashboard/edit-data`) — form dengan validasi Zod
+### Manajemen Data
+- Import bulk dari CSV (preview data sebelum konfirmasi)
+- Import dari GeoJSON (OSM format, auto-detect operator dari properties)
+- Tambah tower manual via form GPS (lat/lng + metadata)
+- Edit data pengukuran individual
+- Hapus data pengukuran (admin only)
+- Export data ke CSV
+- Tabel data server-side paginated dengan filter
 
-### Audit & Logging
-- ✅ Audit log immutable (Prisma client melarang update/delete pada `audit_logs`)
-- ✅ Setiap mutasi data (import, tambah, hapus, edit) menghasilkan entry di audit_logs
-- ✅ Halaman audit log viewer admin-only (`/dashboard/audit`)
+### Dashboard & Analytics
+- Statistik overview: total tower, BTS, TV, Radio
+- Chart distribusi per operator (bar chart)
+- Chart distribusi per wilayah
+- Top 5 operators
+- Command Palette (⌘K) untuk navigasi cepat
 
-### UI/UX
-- ✅ Light/Dark mode (custom ThemeProvider, localStorage persistence, system detection)
-- ✅ Command Palette (CMD+K / CTRL+K) untuk navigasi cepat
-- ✅ Responsive design (sidebar collapse, mobile hamburger menu)
-- ✅ Design token system (CSS variables untuk light/dark)
-- ✅ Framer Motion animations (page transitions, modals, dropdowns)
+### Audit & Keamanan
+- Audit log otomatis untuk setiap mutasi data (immutable — tidak bisa diubah/dihapus)
+- Server Actions dibungkus `createSafeAction` wrapper: validasi Zod + auth check + auto audit log
+- Halaman viewer audit log di `/dashboard/audit`
+
+### UX
+- Dark/Light mode dengan transisi smooth
+- Auto-hide UI setelah idle 5 detik (di halaman peta)
+- Sidebar collapsible
+- Preferensi tersimpan di localStorage: tema peta, format koordinat (Decimal/DMS), unit sinyal (dBm/%)
 
 ---
 
 ## Yang Belum Selesai / Perlu Dilanjutkan
 
-### 🔴 Forgot Password — HANYA UI, TIDAK ADA BACKEND
+### Fitur yang Ada UI-nya Tapi Belum Ada Backend
 
-File: `src/app/forgot-password/page.tsx` (baris 36-42)
+1. **Forgot Password** (`src/app/forgot-password/page.tsx`)
+   Halaman UI-nya sudah ada dan terlihat polished, tapi tidak ada Server Action maupun email service yang menghandle reset password. Perlu integrasi dengan layanan email (Resend, SendGrid, dll) dan mekanisme token reset.
 
-```typescript
-const onSubmit = async (data: ForgotFormValues) => {
-  setIsLoading(true);
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  setIsLoading(false);
-  setIsSubmitted(true);
-};
-```
+2. **Social Login (Google, GitHub, Apple)**
+   Tombol OAuth di halaman login dan register sudah ada di UI, tapi **tidak ada `onClick` handler dan tidak ada NextAuth provider yang dikonfigurasi** di `src/lib/auth.ts`. Saat ini hanya Credentials provider yang aktif. Jika ingin mengaktifkan, tambahkan provider di `authOptions.providers[]`.
 
-Halaman ini menampilkan form "kirim email reset password" dan menampilkan pesan "Email Terkirim!", tapi **tidak ada email yang benar-benar dikirim**. Tidak ada API route untuk reset password, tidak ada token reset di database, tidak ada integrasi email provider (Resend, SendGrid, dll).
+### Hal yang Masih Hardcoded / Placeholder
 
-**Yang perlu dibuat:** API endpoint untuk generate reset token, simpan token di DB, kirim email, dan halaman untuk set password baru.
+3. **Data RF di `rf-propagation.ts` sebagian besar di-generate dari hash ID**
+   Untuk tower yang tidak memiliki data frekuensi/tinggi/azimuth di database (kolom `frekuensi`, `tinggi_menara_m`, `azimuths` di tabel `lokasi_pemancar`), sistem men-generate nilai pseudo-random berdasarkan hash dari ID tower (`pseudoRandomSeed`). Ini menciptakan parameter yang deterministik tapi tidak mencerminkan realita. Fungsi `getFrequencyForOperator` di baris 72-92 memetakan nama operator ke rentang frekuensi yang masuk akal (Telkomsel → 900/1800/2100/2300 MHz, dll), tapi tetap memilih secara pseudo-random.
 
----
+   Script `scripts/seed_rf_data.js` sudah ada untuk mengisi kolom-kolom ini di database, tapi perlu dijalankan manual dan hanya men-generate data dummy juga. **Idealnya data ini diisi dari sumber resmi (misal data spektrum SDPPI).**
 
-### 🔴 Settings Page — SEBAGIAN BESAR TIDAK FUNGSIONAL
+4. **Daftar provinsi di `constants.ts` tidak sinkron dengan database**
+   `PROVINSI_LIST` berisi "DI Jogja" tapi di database setelah normalisasi menjadi "DI Yogyakarta". Konstanta ini digunakan di beberapa tempat sebagai referensi. **Perlu disinkronkan.**
 
-File: `src/app/dashboard/settings/page.tsx`
+5. **`PROVINCE_CENTERS` dan `CITY_CENTERS` di `MapComponentWebGL.tsx`**
+   Koordinat pusat provinsi dan kota di-hardcode (baris 33-56). Jika ada kota/provinsi baru yang diimpor tapi tidak ada di lookup ini, sistem fallback ke rata-rata koordinat dari data `locations` — ini sudah cukup baik. Tapi lookup table-nya mungkin perlu diperluas.
 
-**Yang sudah jalan:**
-- Tab "Preferensi Peta" — mapTheme, coordFormat, signalUnit, hexagonMode tersimpan di `PreferencesProvider` (localStorage)
+6. **`handleCheckSignal` masih memakai string lama**
+   Di `MapComponentWebGL.tsx` baris 162-168, ada pengecekan `closest.jenis === "Televisi"` dan `closest.jenis === "Radio Siaran"` — ini nama lama yang sudah dinormalisasi ke "TV" dan "Radio". Logika ini akan menghasilkan radius fallback yang salah untuk tower TV dan Radio yang ditemukan lewat fitur cek sinyal. **Perlu diupdate ke nama baru.**
 
-**Yang TIDAK jalan:**
-- **Tab "Umum" (Profil)** — form nama dan email hanya menampilkan hardcoded value `"Harits"` dan `"harits@example.com"`. Tombol "Simpan Perubahan" tidak melakukan apa-apa ke database. Upload foto profil tidak diimplementasikan.
-- **Tab "Developer & API"** — menampilkan 2 API key dummy yang hardcoded. Tombol "Generate New Key" tidak melakukan apa-apa. Tidak ada sistem API key di database.
-- **Tab "Keamanan"** — form ubah password tidak tersambung ke backend. Tombol "Enable 2FA" tidak diimplementasikan.
-- **Bug CSS**: Baris 361 memiliki `py-10 py-3` (duplikat padding class) pada input Password Baru.
+### Bug yang Diketahui
 
----
+7. **Voronoi diagram dihitung tapi penggunaannya terbatas**
+   `voronoiData` di `MapComponentWebGL.tsx` (baris 222-262) dihitung setiap kali coverage diaktifkan — ini memakan CPU untuk kalkulasi yang hanya menampilkan garis putus-putus tipis. Bisa dipertimbangkan untuk lazy compute atau dibuatkan toggle terpisah.
 
-### 🟡 Halaman "Hak Akses" (`/dashboard/permissions`) — TIDAK ADA
+### Infrastruktur yang Belum Disiapkan
 
-Sidebar mendefinisikan link ke `/dashboard/permissions` (file `Sidebar.tsx` baris 49), tapi **halaman ini tidak pernah dibuat**. Mengklik akan menghasilkan 404.
+8. **Tidak ada Prisma migrations**
+   Schema langsung di-push (`prisma db push`). Untuk produksi, sebaiknya mulai menggunakan `prisma migrate` agar perubahan skema bisa dilacak dan di-rollback.
 
----
+9. **Tidak ada CI/CD pipeline**
+   Belum ada GitHub Actions, Vercel config, atau Dockerfile. Playwright tests harus dijalankan manual.
 
-### 🟡 Notifications Panel — UI ONLY
+10. **Tidak ada seed script terintegrasi**
+    Tidak ada `prisma/seed.ts`. Data harus diimpor manual via CSV/GeoJSON atau script di `scripts/`.
 
-File: `src/app/dashboard/NotificationsPanel.tsx` (7979 bytes). Komponen ini kemungkinan menampilkan panel notifikasi, tapi tidak ada backend untuk notifikasi (tidak ada tabel notifications di database, tidak ada API endpoint).
-
----
-
-### 🟡 User Profile Dropdown — PERLU REVIEW
-
-File: `src/app/dashboard/UserProfileDropdown.tsx` (6428 bytes). Komponen ini ada tapi perlu diverifikasi apakah semua action links-nya benar-benar tersambung.
-
----
-
-### 🟡 Activity Logger — UNDERUTILIZED
-
-File: `src/lib/activity-logger.ts` menulis ke file `activity.log` di root, tapi sangat jarang dipanggil di kode. Sistem audit yang sebenarnya dipakai adalah `audit.ts` (menulis ke database). `activity-logger.ts` kemungkinan sisa dari fase development awal dan bisa dihapus atau digantikan sepenuhnya oleh audit database.
-
----
-
-### 🟡 Download Scripts — ONE-TIME UTILITIES
-
-`download.ps1`, `download_logos.js`, `download_logos2.js` — script untuk mendownload logo operator. Ini utilitas one-time, bukan bagian core app. Bisa diabaikan.
-
----
-
-### 🟡 Provinsi "DI Jogja" vs "DI Yogyakarta"
-
-Di `constants.ts` baris 8, provinsi ditulis `"DI Jogja"`. Tapi di `MapComponentWebGL.tsx` baris 39, `PROVINCE_CENTERS` menggunakan `"DI Yogyakarta"`. Inkonsistensi ini bisa menyebabkan kluster provinsi Yogyakarta tidak muncul pada zoom rendah jika data di database menggunakan salah satu format saja.
-
----
-
-### 🟡 `test_ops.js` — File test utility di root
-
-File `test_ops.js` (420 bytes) di root project. Kemungkinan test script sementara yang tertinggal.
+11. **`next-themes` diinstal tapi tidak digunakan**
+    Package `next-themes` ada di `package.json` tapi theming dihandle custom via `ThemeProvider.tsx` menggunakan CSS variables + localStorage. Package ini bisa di-uninstall.
 
 ---
 
 ## Keputusan Teknis Penting
 
-### 1. BigInt Serialization Monkey Patch
+### Mengapa MapLibre GL + Deck.GL, bukan Leaflet?
+Proyek ini awalnya menggunakan Leaflet (terlihat dari riwayat cleanup). Migrasi ke MapLibre GL + Deck.GL dilakukan karena performa rendering ribuan marker dan polygon coverage jauh lebih baik di WebGL. Leaflet rendering DOM-based tidak mampu menangani volume data ini tanpa lag.
 
-File: `src/lib/prisma.ts` baris 3-8
+### Mengapa Okumura-Hata dan bukan model propagasi lain?
+Okumura-Hata adalah model empiris standar industri untuk prediksi path loss di lingkungan urban/suburban pada rentang frekuensi 150-1500 MHz (dengan ekstensi hingga 2300 MHz). Model ini dipilih karena:
+- Cukup akurat untuk visualisasi cakupan kasar tanpa data terrain detail
+- Parameternya sederhana: frekuensi, tinggi tower, jarak
+- Secara otomatis menghasilkan radius yang lebih besar untuk frekuensi rendah (Radio/TV) dan lebih kecil untuk frekuensi tinggi (seluler) — sesuai fisika propagasi
 
-```typescript
-if (typeof BigInt !== "undefined" && !(BigInt.prototype as any).toJSON) {
-  (BigInt.prototype as any).toJSON = function () {
-    return this.toString();
-  };
-}
-```
+### Mengapa Server Actions dibungkus `createSafeAction`?
+Ini pattern yang menggabungkan authentication check, Zod validation, dan audit logging dalam satu wrapper. Alasannya: menghindari duplikasi boilerplate di setiap Server Action. Setiap action cukup deklarasikan role yang dibutuhkan (`admin`/`user`/`public`), schema Zod-nya, dan handler logic. Lihat `src/lib/middleware/action-wrapper.ts`.
 
-**Alasan**: Prisma menggunakan `BigInt` untuk ID kolom `UNSIGNED BIGINT` dari MySQL. JavaScript native `JSON.stringify()` tidak bisa serialize `BigInt`, menyebabkan crash saat Next.js mencoba serialize data ke client. Monkey patch ini mengkonversi BigInt ke string saat JSON serialization.
+### Mengapa coverage polygon pakai hexagon dan bukan circle?
+Permintaan klien. Hexagon dipilih karena secara visual lebih tegas menunjukkan area cakupan, dan orientasi sudut atasnya bisa di-rotate mengikuti azimuth pertama antena tower — memberikan indikasi arah pancaran utama.
 
-**Risiko**: Monkey patch ini mengubah prototype global. Ini adalah workaround standar tapi perlu diperhatikan saat debugging issue terkait number/string type mismatch.
+### Mengapa BigInt di-monkey-patch?
+Prisma menggunakan `BigInt` untuk kolom `UNSIGNED BIGINT` di MySQL. JavaScript `JSON.stringify` tidak bisa serialize BigInt secara native. Monkey-patch `BigInt.prototype.toJSON` di `src/lib/prisma.ts` adalah solusi pragmatis yang dipakai secara luas di ekosistem Prisma + Next.js.
 
-### 2. Audit Log Immutability via Prisma Extension
+### Mengapa audit_logs dibuat immutable di level ORM?
+Prisma client di-extend untuk menolak `update`, `updateMany`, `delete`, `deleteMany` pada model `audit_logs`. Ini menjamin integritas log audit bahkan jika ada bug di kode aplikasi yang secara tidak sengaja mencoba memodifikasi log.
 
-File: `src/lib/prisma.ts` baris 11-28
-
-Prisma client di-extend dengan hook yang melempar error jika ada upaya `update`, `updateMany`, `delete`, atau `deleteMany` pada tabel `audit_logs`. Ini memastikan audit trail tidak bisa dimanipulasi dari aplikasi.
-
-**Catatan**: Ini hanya proteksi di level aplikasi. Akses langsung ke MySQL masih bisa mengubah data. Untuk produksi, pertimbangkan proteksi di level database (GRANT permissions).
-
-### 3. Kompatibilitas Hash Password Laravel
-
-File: `src/lib/auth.ts` baris 29-30
-
-```typescript
-// bcryptjs handles bcrypt hashes from laravel perfectly
-const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-```
-
-**Konteks**: Proyek ini kemungkinan migrasi dari aplikasi Laravel. `bcryptjs` kompatibel dengan hash `$2y$` yang dihasilkan Laravel, sehingga user lama bisa login tanpa reset password.
-
-### 4. Simulasi RF — Bukan Data Riil
-
-File: `src/lib/rf-propagation.ts`
-
-Kalkulasi cakupan sinyal menggunakan model **Okumura-Hata** yang merupakan model propagasi standar telekomunikasi. Namun beberapa parameter di-generate secara pseudo-random:
-
-- `getFrequencyForOperator()` — jika data frekuensi tidak ada di database, frekuensi di-derive dari nama operator dengan seed pseudo-random.
-- `getTowerParams()` — tinggi menara, jumlah sektor antena, dan azimuth di-generate berdasarkan tower density dan seed dari ID.
-
-**Implikasi**: Visualisasi cakupan sinyal adalah **simulasi/estimasi**, bukan pengukuran aktual. Data yang akurat bergantung pada apakah field `frekuensi`, `tinggi_menara_m`, dan `azimuths` di tabel `lokasi_pemancar` diisi dengan benar saat import.
-
-Script `scripts/seed_rf_data.js` bisa dijalankan untuk mengisi data RF secara otomatis ke tower telco yang belum memiliki data tersebut.
-
-### 5. Rate Limiting In-Memory
-
-File: `src/lib/rate-limit.ts`
-
-Rate limiter menggunakan LRU cache di memori proses. Ini berarti:
-- Reset setiap kali server restart.
-- Tidak shared antar instance jika di-deploy multi-process.
-- Cukup untuk development dan single-instance deployment.
-
-Untuk produksi, pertimbangkan Redis-based rate limiting.
-
-### 6. `EXCLUDED_JENIS` — Filter "Lighting"
-
-File: `src/lib/constants.ts` baris 15
-
-```typescript
-export const EXCLUDED_JENIS = ["lighting", "Lighting"];
-```
-
-Ada jenis komunikasi "Lighting" di database yang di-exclude dari semua query dan tampilan. Ada juga script `db:delete-lighting` di package.json untuk menghapusnya. Ini kemungkinan data noise/artifact dari import data awal.
-
-### 7. Custom Theme Provider (bukan next-themes)
-
-Meskipun `next-themes` terdaftar di `package.json`, project menggunakan **custom `ThemeProvider`** (`src/components/ThemeProvider.tsx`) yang mengimplementasikan light/dark/system detection sendiri via localStorage key `"rabelle-theme"`. `next-themes` mungkin tidak terpakai atau sisa dari versi sebelumnya.
-
-### 8. Tidak Ada Middleware untuk Auth Protection
-
-Saat ini, proteksi route dilakukan per-halaman (masing-masing server component memanggil `getServerSession()` dan `redirect()` sendiri). Tidak ada `middleware.ts` Next.js untuk auth guard global. Ini berarti jika developer menambah halaman baru di `/dashboard/`, halaman tersebut **secara default tidak terproteksi** — harus menambahkan session check manual.
+### Asal-usul skema database: Laravel
+Skema database ini **bukan** dibuat dari nol untuk Next.js. Nama tabel dan kolom (snake_case, `created_at`/`updated_at`, `remember_token`) menunjukkan ini adalah migrasi dari proyek Laravel sebelumnya. Kolom `remember_token` di tabel `users` adalah artefak Laravel yang tidak digunakan di Next.js. Password hash di database kompatibel antara Laravel (`bcrypt`) dan `bcryptjs` yang dipakai di sini — ini sudah diverifikasi dan dicatat di komentar `src/lib/auth.ts` baris 30.
 
 ---
 
 ## Cara Berkontribusi / Development Workflow
 
+### Branch Naming
+
+Proyek ini menggunakan branch `update-dashboard-maps` sebagai branch kerja utama saat ini. Konvensi yang direkomendasikan:
+
+```
+feature/nama-fitur      — Fitur baru
+fix/deskripsi-bug        — Perbaikan bug
+refactor/area-kode       — Refactoring tanpa perubahan fitur
+chore/deskripsi          — Cleanup, dependency update, dll
+```
+
+### Commit Messages
+
+Mengikuti format [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+feat(maps): implement azimuth-aware coverage polygons
+fix(maps): resolve popup closing issue on marker click
+refactor(middleware): replace rate limiter with edge-compatible version
+chore(deps): remove unused npm packages
+```
+
 ### Menambah Fitur Baru
 
-1. **Halaman baru di dashboard**: Buat folder di `src/app/dashboard/<nama-fitur>/`, tambahkan `page.tsx`. Tambahkan link di `Sidebar.tsx` (array `NAV_GROUPS`). Jika admin-only, tambahkan `adminOnly: true`.
-
-2. **API endpoint baru**: Buat `src/app/api/<endpoint>/route.ts`. Ikuti pola yang sudah ada — import `prisma`, tambahkan session check jika perlu, gunakan `rateLimit()` untuk endpoint publik.
-
-3. **Server action baru**: Buat file `.ts` dengan `"use server"` di atas. Tempatkan di `src/app/actions/` untuk action global, atau di folder fitur terkait (contoh: `data-tabel/actions.ts`).
-
-4. **Modifikasi schema database**: Edit `prisma/schema.prisma`, lalu jalankan `npx prisma db push` (development) atau `npx prisma migrate dev` (jika ingin migration history).
+1. **Jika fitur melibatkan data baru:** Tambahkan model/kolom di `prisma/schema.prisma`, lalu `npx prisma db push` dan `npx prisma generate`.
+2. **Jika fitur adalah halaman baru di dashboard:** Buat folder di `src/app/dashboard/nama-fitur/` dengan `page.tsx`. Tambahkan link di `Sidebar.tsx`.
+3. **Jika fitur melibatkan mutasi data:** Buat Server Action dan bungkus dengan `createSafeAction` dari `src/lib/middleware/action-wrapper.ts`. Ini otomatis menangani auth check, validasi, dan audit logging.
+4. **Jika fitur melibatkan komponen peta baru:** Semua logika peta ada di `MapComponentWebGL.tsx`. Untuk layer Deck.GL baru, tambahkan di `useMemo` block `deckLayers`.
 
 ### Menjalankan Tests
 
 ```bash
-# Pastikan database test sudah ada (rabelle_test di MySQL)
-npx prisma db push --schema=./prisma/schema.prisma  # dengan .env.test
+# Install browser Playwright (pertama kali saja)
+npx playwright install chromium
 
-# Jalankan E2E tests
+# Jalankan semua E2E tests (akan otomatis start dev server)
 npx playwright test
 
 # Jalankan test spesifik
 npx playwright test tests/e2e/auth.spec.ts
 
-# Buka test report
+# Lihat report
 npx playwright show-report
 ```
 
-Playwright config (`playwright.config.ts`) otomatis menjalankan dev server dengan `.env.test` sebelum test dimulai.
+> **Catatan:** Tests membutuhkan `.env.test` yang sudah ada di repo. Pastikan database test tersedia dan terjangkau.
 
-### Scripts Utility
+### Tips Development
 
-```bash
-# Export seluruh data tower ke CSV
-node scripts/export-csv.js
-
-# Generate data RF (frekuensi, tinggi, azimuth) untuk tower telco
-node scripts/seed_rf_data.js
-
-# Hapus data "lighting" dari database
-npm run db:delete-lighting
-
-# Tambah user admin baru (edit file dulu)
-node scripts/add-admin.js
-```
-
-### Konvensi Kode
-
-- **Bahasa UI**: Indonesia (label, error message, komentar). Kode dan nama variabel dalam bahasa Inggris.
-- **Styling**: Tailwind CSS utilities. Warna menggunakan semantic tokens (`text-foreground`, `bg-card`, `border-border`, dll.) yang didefinisikan di `globals.css`.
-- **State management**: Tidak ada global state library. Gunakan React Context (lihat `PreferencesProvider`, `IdleProvider`) atau server components.
-- **Data fetching**: Server Components untuk initial data, client-side `fetch()` untuk data dinamis (markers).
-- **Validasi**: Zod schema untuk form input yang kritis. Validasi manual untuk form yang lebih sederhana.
-
-### Hal-Hal yang Perlu Diperhatikan
-
-- Selalu test dengan dark mode — beberapa komponen (terutama popup peta di `MapComponentWebGL.tsx` baris 451) memiliki hardcoded `bg-white` dan `text-slate-800` yang tidak mengikuti theme system.
-- API `/api/markers` membatasi response ke **1500 marker** per viewport (`take: 1500` di `markers/route.ts` baris 64). Ini sengaja untuk performa, tapi bisa menyembunyikan data di area sangat padat.
-- Setelah mutasi data (import/tambah/hapus), panggil `revalidateTowerPaths()` dari `src/lib/tower.ts` untuk invalidate cache Next.js pada halaman terkait.
+- **Hot reload peta lambat?** MapLibre GL dan Deck.GL di-lazy-load via `MapWrapper.tsx`. Perubahan di `MapComponentWebGL.tsx` memerlukan full remount. Pertimbangkan untuk memecah komponen jika file ini terus membengkak (saat ini 500+ baris).
+- **BigInt error di console?** Pastikan `src/lib/prisma.ts` sudah ter-import sebelum operasi Prisma apapun. Monkey-patch BigInt harus jalan sebelum `JSON.stringify`.
+- **Filter peta tidak update?** Filter menggunakan URL search params. Periksa bahwa `useSearchParams()` terbaca dengan benar dan `fetchMarkers` di-trigger ulang.
+- **Coverage tidak muncul?** Coverage hanya render di zoom level ≥ 11. Periksa `zoomOpacity` calculation di `deckLayers` useMemo.
 
 ---
 
-## Lisensi
+## Referensi Cepat: File yang Paling Sering Disentuh
 
-Proyek ini dikembangkan untuk kebutuhan internal **Rabelle Intelligence**. Hak cipta © 2026.
+| Skenario | File Utama |
+|----------|-----------|
+| Menambah/mengubah field database | `prisma/schema.prisma` |
+| Mengubah tampilan/logika peta | `src/app/dashboard/maps/MapComponentWebGL.tsx` |
+| Mengubah kalkulasi coverage/propagasi | `src/lib/rf-propagation.ts`, `src/app/dashboard/maps/hooks/useSignalCoverage.ts` |
+| Menambah Server Action baru | Buat file di `src/app/.../actions.ts`, gunakan `createSafeAction` dari `src/lib/middleware/action-wrapper.ts` |
+| Mengubah filter peta | `src/app/dashboard/maps/FloatingFilter.tsx` |
+| Mengubah filter tabel | `src/app/dashboard/data-tabel/TableFilter.tsx` |
+| Mengubah navigasi sidebar | `src/app/dashboard/Sidebar.tsx` |
+| Menambah API endpoint | `src/app/api/nama-endpoint/route.ts` |
+| Mengubah autentikasi | `src/lib/auth.ts` |
+| Mengubah proteksi route | `src/middleware.ts` |
+| Menambah tipe data custom | `src/types/next-auth.d.ts` |
