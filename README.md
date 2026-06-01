@@ -350,23 +350,18 @@ d:\Rabelle-Standalone\
 5. **`PROVINCE_CENTERS` dan `CITY_CENTERS` di `MapComponentWebGL.tsx`**
    Koordinat pusat provinsi dan kota di-hardcode (baris 33-56). Jika ada kota/provinsi baru yang diimpor tapi tidak ada di lookup ini, sistem fallback ke rata-rata koordinat dari data `locations` — ini sudah cukup baik. Tapi lookup table-nya mungkin perlu diperluas.
 
-### Bug yang Diketahui
-
-6. **Voronoi diagram dihitung tapi penggunaannya terbatas**
-   `voronoiData` di `MapComponentWebGL.tsx` (baris 222-262) dihitung setiap kali coverage diaktifkan — ini memakan CPU untuk kalkulasi yang hanya menampilkan garis putus-putus tipis. Bisa dipertimbangkan untuk lazy compute atau dibuatkan toggle terpisah.
-
 ### Infrastruktur yang Belum Disiapkan
 
-7. **Tidak ada Prisma migrations**
+6. **Tidak ada Prisma migrations**
    Schema langsung di-push (`prisma db push`). Untuk produksi, sebaiknya mulai menggunakan `prisma migrate` agar perubahan skema bisa dilacak dan di-rollback.
 
-8. **Tidak ada CI/CD pipeline**
+7. **Tidak ada CI/CD pipeline**
    Belum ada GitHub Actions, Vercel config, atau Dockerfile. Playwright tests harus dijalankan manual.
 
-9. **Tidak ada seed script terintegrasi**
+8. **Tidak ada seed script terintegrasi**
     Tidak ada `prisma/seed.ts`. Data harus diimpor manual via CSV/GeoJSON atau script di `scripts/`.
 
-10. **`next-themes` diinstal tapi tidak digunakan**
+9. **`next-themes` diinstal tapi tidak digunakan**
     Package `next-themes` ada di `package.json` tapi theming dihandle custom via `ThemeProvider.tsx` menggunakan CSS variables + localStorage. Package ini bisa di-uninstall.
 
 ---
