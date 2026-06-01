@@ -1,20 +1,16 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createSafeAction } from "@/lib/middleware/action-wrapper";
 
-export async function importTowers(data: any[]) {
-  try {
-    const session = await getServerSession(authOptions);
-    const isAdmin = session?.user?.isAdmin;
-
-    if (!isAdmin) {
-      return { success: false, error: "Unauthorized. Fitur ini hanya untuk Admin." };
-    }
-
+export const importTowers = createSafeAction<any[], any>(
+  null,
+  "admin",
+  "MUTATION",
+  "IMPORT_DATA",
+  async (data) => {
     if (!data || data.length === 0) {
-      return { success: false, error: "Data kosong." };
+      return { success: false, message: "Data kosong." };
     }
 
     let successCount = 0;
@@ -33,7 +29,7 @@ export async function importTowers(data: any[]) {
       
       let azimuths = row.Azimuths || row.azimuths || null;
       if (typeof azimuths === "string" && azimuths.includes(",")) {
-        azimuths = JSON.stringify(azimuths.split(",").map(a => Number(a.trim())));
+        azimuths = JSON.stringify(azimuths.split(",").map((a: string) => Number(a.trim())));
       }
 
       if (!operatorName || !kota || !latStr || !lngStr) {
@@ -103,19 +99,6 @@ export async function importTowers(data: any[]) {
       successCount++;
     }
 
-    // Log the import to audit_logs
-    await prisma.audit_logs.create({
-      data: {
-        user_id: session.user?.id ? BigInt(session.user.id) : null,
-        action: "IMPORT_DATA",
-        details: `Telah mengimpor/menambahkan ${successCount} data menara baru.`,
-        created_at: new Date()
-      }
-    });
-
-    return { success: true, count: successCount };
-  } catch (error: any) {
-    console.error("Import error:", error);
-    return { success: false, error: error.message || "Failed to import data" };
+    return { success: true, count: successCount, message: `Berhasil mengimpor ${successCount} data menara.` };
   }
-}
+);

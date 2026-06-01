@@ -9,7 +9,7 @@ export default function EditDataPage() {
   const [activeTab, setActiveTab] = useState<'geojson' | 'gps'>('geojson');
   const [isPending, setIsPending] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [result, setResult] = useState<{ success: boolean; message?: string } | null>(null);
 
   // GPS Form States
   const [lat, setLat] = useState("");

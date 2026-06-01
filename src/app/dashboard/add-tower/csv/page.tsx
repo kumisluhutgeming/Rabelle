@@ -42,7 +42,7 @@ export default function CsvImportPage() {
         setData([]);
         setFile(null);
       } else {
-        setMessage({ type: 'error', text: result.error || 'Terjadi kesalahan saat mengimpor.' });
+        setMessage({ type: 'error', text: result.message || result.error || 'Terjadi kesalahan saat mengimpor.' });
       }
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Terjadi kesalahan sistem.' });

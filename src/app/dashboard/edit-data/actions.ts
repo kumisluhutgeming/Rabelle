@@ -3,10 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { upsertLocation, revalidateTowerPaths } from "@/lib/tower";
-
-import { createAuditLog } from "@/lib/audit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createSafeAction } from "@/lib/middleware/action-wrapper";
 import { z } from "zod";
 
 const GpsTowerSchema = z.object({
@@ -25,13 +22,12 @@ function isGeneric(name: string | null | undefined) {
   return genericNames.includes(name.toLowerCase().trim());
 }
 
-export async function uploadGeojson(formData: FormData) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.isAdmin) {
-      return { success: false, message: "Unauthorized: Akses ditolak." };
-    }
-
+export const uploadGeojson = createSafeAction<FormData, any>(
+  null,
+  "admin",
+  "MUTATION",
+  "Impor GeoJSON",
+  async (formData) => {
     const file = formData.get("file") as File;
     const kotaName = formData.get("kota") as string;
 
@@ -138,25 +134,19 @@ export async function uploadGeojson(formData: FormData) {
 
     revalidateTowerPaths();
 
-    await createAuditLog("Impor GeoJSON", `Menambahkan ${newCount} menara baru dan memperbarui ${updateCount} menara di kota ${kotaName}`);
-
     return {
       success: true,
       message: `Impor berhasil! Ditambahkan: ${newCount}, Diperbarui: ${updateCount}, Dilewati (Duplikat): ${skippedCount}`,
     };
-  } catch (error: any) {
-    console.error("GeoJSON Error:", error);
-    return { success: false, message: "Gagal memproses file: " + error.message };
   }
-}
+);
 
-export async function saveGpsTower(formData: FormData) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.isAdmin) {
-      return { success: false, message: "Unauthorized: Akses ditolak." };
-    }
-
+export const saveGpsTower = createSafeAction<FormData, any>(
+  null,
+  "admin",
+  "MUTATION",
+  "Tambah Menara Baru",
+  async (formData) => {
     const rawData = {
       operator: formData.get("operator"),
       provinsi: formData.get("provinsi"),
@@ -206,11 +196,6 @@ export async function saveGpsTower(formData: FormData) {
 
     revalidateTowerPaths();
 
-    await createAuditLog("Tambah Menara Baru", `Menambahkan menara operator ${operator} (${jenis}) di ${kota}, ${provinsi}`);
-
     return { success: true, message: "Menara baru berhasil ditambahkan!" };
-  } catch (error: any) {
-    console.error("GPS Error:", error);
-    return { success: false, message: "Gagal menambahkan data: " + error.message };
   }
-}
+);

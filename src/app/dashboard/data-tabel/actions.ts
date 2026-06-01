@@ -2,17 +2,15 @@
 
 import prisma from "@/lib/prisma";
 import { revalidateTowerPaths } from "@/lib/tower";
-import { createAuditLog } from "@/lib/audit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createSafeAction } from "@/lib/middleware/action-wrapper";
+import { z } from "zod";
 
-export async function deleteTowerData(id: string) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session || (!(session as any).user?.isAdmin && (session as any).user?.role !== "admin")) {
-      return { success: false, message: "Unauthorized: Akses ditolak." };
-    }
-
+export const deleteTowerData = createSafeAction<string, null>(
+  null,
+  "admin",
+  "MUTATION",
+  "Hapus Menara",
+  async (id) => {
     const pengukuran = await prisma.pengukuran.findUnique({
       where: { id: BigInt(id) },
     });
@@ -45,17 +43,23 @@ export async function deleteTowerData(id: string) {
 
     revalidateTowerPaths();
 
-    await createAuditLog("Hapus Menara", `Menghapus data menara ID ${id}`);
-
     return { success: true, message: "Data berhasil dihapus." };
-  } catch (error: any) {
-    console.error("Delete Error:", error);
-    return { success: false, message: "Gagal menghapus data: " + error.message };
   }
+);
+
+interface ExportParams {
+  jenis?: string;
+  provinsi?: string;
+  kota?: string;
+  operator?: string;
 }
 
-export async function exportCsvData(params: { jenis?: string; provinsi?: string; kota?: string; operator?: string }) {
-  try {
+export const exportCsvData = createSafeAction<ExportParams, null>(
+  null,
+  "user",
+  "QUERY",
+  "Export Data",
+  async (params) => {
     const where: any = {};
     const radioWhere: any = {};
     if (params.jenis) {
@@ -104,8 +108,5 @@ export async function exportCsvData(params: { jenis?: string; provinsi?: string;
     ].join("\n");
 
     return { success: true, csv: csvContent };
-  } catch (error: any) {
-    console.error("Export Error:", error);
-    return { success: false, message: "Gagal mengekspor data: " + error.message };
   }
-}
+);
