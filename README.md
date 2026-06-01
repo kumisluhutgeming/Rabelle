@@ -344,26 +344,6 @@ d:\Rabelle-Standalone\
 
    Script `scripts/seed_rf_data.js` sudah ada untuk mengisi kolom-kolom ini di database, tapi perlu dijalankan manual dan hanya men-generate data dummy juga. **Idealnya data ini diisi dari sumber resmi (misal data spektrum SDPPI).**
 
-4. **Daftar provinsi di `constants.ts` tidak sinkron dengan database**
-   `PROVINSI_LIST` berisi "DI Jogja" tapi di database setelah normalisasi menjadi "DI Yogyakarta". Konstanta ini digunakan di beberapa tempat sebagai referensi. **Perlu disinkronkan.**
-
-5. **`PROVINCE_CENTERS` dan `CITY_CENTERS` di `MapComponentWebGL.tsx`**
-   Koordinat pusat provinsi dan kota di-hardcode (baris 33-56). Jika ada kota/provinsi baru yang diimpor tapi tidak ada di lookup ini, sistem fallback ke rata-rata koordinat dari data `locations` — ini sudah cukup baik. Tapi lookup table-nya mungkin perlu diperluas.
-
-### Infrastruktur yang Belum Disiapkan
-
-6. **Tidak ada Prisma migrations**
-   Schema langsung di-push (`prisma db push`). Untuk produksi, sebaiknya mulai menggunakan `prisma migrate` agar perubahan skema bisa dilacak dan di-rollback.
-
-7. **Tidak ada CI/CD pipeline**
-   Belum ada GitHub Actions, Vercel config, atau Dockerfile. Playwright tests harus dijalankan manual.
-
-8. **Tidak ada seed script terintegrasi**
-    Tidak ada `prisma/seed.ts`. Data harus diimpor manual via CSV/GeoJSON atau script di `scripts/`.
-
-9. **`next-themes` diinstal tapi tidak digunakan**
-    Package `next-themes` ada di `package.json` tapi theming dihandle custom via `ThemeProvider.tsx` menggunakan CSS variables + localStorage. Package ini bisa di-uninstall.
-
 ---
 
 ## Keputusan Teknis Penting
