@@ -5,7 +5,6 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 type MapTheme = "colorful" | "voyager" | "dark" | "satellite";
 type CoordFormat = "decimal" | "dms";
 type SignalUnit = "dbm" | "percent";
-type HexagonMode = "multi" | "single";
 
 interface PreferencesContextType {
   mapTheme: MapTheme;
@@ -14,8 +13,6 @@ interface PreferencesContextType {
   setCoordFormat: (format: CoordFormat) => void;
   signalUnit: SignalUnit;
   setSignalUnit: (unit: SignalUnit) => void;
-  hexagonMode: HexagonMode;
-  setHexagonMode: (mode: HexagonMode) => void;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -32,19 +29,15 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [mapTheme, setMapTheme] = useState<MapTheme>("colorful");
   const [coordFormat, setCoordFormat] = useState<CoordFormat>("decimal");
   const [signalUnit, setSignalUnit] = useState<SignalUnit>("dbm");
-  const [hexagonMode, setHexagonMode] = useState<HexagonMode>("multi");
 
   // Load from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("rabelle_map_theme") as MapTheme;
     const savedFormat = localStorage.getItem("rabelle_coord_format") as CoordFormat;
     const savedUnit = localStorage.getItem("rabelle_signal_unit") as SignalUnit;
-    const savedHexagonMode = localStorage.getItem("rabelle_hexagon_mode") as HexagonMode;
-
     if (savedTheme) setMapTheme(savedTheme);
     if (savedFormat) setCoordFormat(savedFormat);
     if (savedUnit) setSignalUnit(savedUnit);
-    if (savedHexagonMode) setHexagonMode(savedHexagonMode);
   }, []);
 
   // Save to localStorage when changed
@@ -60,16 +53,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("rabelle_signal_unit", signalUnit);
   }, [signalUnit]);
 
-  useEffect(() => {
-    localStorage.setItem("rabelle_hexagon_mode", hexagonMode);
-  }, [hexagonMode]);
 
   return (
     <PreferencesContext.Provider value={{ 
       mapTheme, setMapTheme, 
       coordFormat, setCoordFormat, 
-      signalUnit, setSignalUnit,
-      hexagonMode, setHexagonMode
+      signalUnit, setSignalUnit
     }}>
       {children}
     </PreferencesContext.Provider>

@@ -32,7 +32,6 @@ interface MapControlsProps {
   mapTheme: string;
   setMapTheme: (theme: any) => void;
   zoomPercent: number;
-  hexagonMode: string;
   onCheckSignal: () => void;
   activeJenisFilter?: string | null;
 }
@@ -43,7 +42,6 @@ export default function MapControls({
   mapTheme,
   setMapTheme,
   zoomPercent,
-  hexagonMode,
   onCheckSignal,
   activeJenisFilter
 }: MapControlsProps) {
@@ -103,16 +101,7 @@ export default function MapControls({
         <div className="text-[11px] font-black text-indigo-600 font-mono">{zoomPercent}%</div>
       </div>
       
-      {showCoverage && hexagonMode === 'multi' && activeJenisFilter && (
-        <div className="bg-background/95 border border-border px-3 py-2 shadow-2xl rounded-2xl text-center">
-          <div className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter mb-0.5">Skala</div>
-          <div className="text-[11px] font-black text-emerald-600 font-mono">
-            {activeJenisFilter.toLowerCase().includes('radio') || activeJenisFilter.toLowerCase().includes('tv') || activeJenisFilter.toLowerCase().includes('televisi') 
-              ? '1 Heksagon ≈ 3.2km' 
-              : '1 Heksagon ≈ 174m'}
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
